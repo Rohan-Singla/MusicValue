@@ -1,0 +1,12 @@
+{
+  "rules": [
+    {
+      "pathPattern": "/track/*",
+      "apiPath": "/api/actions/back-track?trackId=*"
+    },
+    {
+      "pathPattern": "/api/actions/**",
+      "apiPath": "/api/actions/**"
+    }
+  ]
+}

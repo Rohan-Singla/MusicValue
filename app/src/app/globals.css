@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-base: #0a0a0f;
+  --color-base-50: #12121a;
+  --color-base-100: #1a1a25;
+  --color-base-200: #222230;
+  --color-purple: #8b5cf6;
+  --color-cyan: #06b6d4;
+  --color-pink: #ec4899;
+}
+
+body {
+  background: var(--color-base);
+  color: #e2e8f0;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Glassmorphism card */
+.glass-card {
+  background: rgba(18, 18, 26, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 16px;
+}
+
+.glass-card:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gradient border */
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Progress bar */
+.vault-progress {
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.vault-progress-bar {
+  background: linear-gradient(90deg, #8b5cf6, #06b6d4);
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+/* Button styles */
+.btn-primary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+  color: white;
+  font-weight: 600;
+  padding: 0.625rem 1.5rem;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+  font-weight: 600;
+  padding: 0.625rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: rgba(139, 92, 246, 0.25);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* Wallet adapter overrides */
+.wallet-adapter-button {
+  background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%) !important;
+  border-radius: 12px !important;
+  height: 40px !important;
+  font-size: 14px !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-base);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-base-200);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}
