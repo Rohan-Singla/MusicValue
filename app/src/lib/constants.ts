@@ -1,5 +1,5 @@
 // Program - exported as strings to avoid PublicKey prototype loss across module boundaries
-export const PROGRAM_ID_STR = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS";
+export const PROGRAM_ID_STR = "rj7W3p82B8xKoQRb5dVDCkmGJu4uY3LPvR8uZBGmh6c";
 
 // Solana
 export const SOLANA_RPC_URL =

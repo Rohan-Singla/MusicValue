@@ -17,14 +17,7 @@ import {
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import { SOLANA_RPC_URL, APP_URL, AUDIUS_API_BASE } from "@/lib/constants";
-
-// CORS headers required by Solana Actions spec
-const ACTIONS_CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
-  "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, Content-Encoding, Accept-Encoding",
-};
+import { ACTIONS_CORS_HEADERS } from "@/lib/actions";
 
 export const OPTIONS = () => {
   return NextResponse.json(null, { headers: ACTIONS_CORS_HEADERS });
