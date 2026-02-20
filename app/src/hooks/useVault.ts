@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
 import {
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
@@ -11,10 +11,18 @@ import {
   getAccount,
 } from "@solana/spl-token";
 import { Program, AnchorProvider, BN, Idl } from "@coral-xyz/anchor";
-import { PROGRAM_ID, USDC_MINT } from "@/lib/constants";
+import { PROGRAM_ID_STR, USDC_MINT_STR } from "@/lib/constants";
 
-// Minimal IDL type - replace with generated IDL after `anchor build`
 import idl from "@/lib/idl.json";
+
+// Construct PublicKey lazily to avoid prototype loss across Next.js module boundaries
+function programId() {
+  return new PublicKey(PROGRAM_ID_STR);
+}
+
+function usdcMint() {
+  return new PublicKey(USDC_MINT_STR);
+}
 
 function useProgram() {
   const { connection } = useConnection();
@@ -23,41 +31,57 @@ function useProgram() {
   return useMemo(() => {
     if (!wallet.publicKey || !wallet.signTransaction) return null;
 
-    const provider = new AnchorProvider(
-      connection,
-      wallet as any,
-      AnchorProvider.defaultOptions()
-    );
+    try {
+      // Rebuild the wallet publicKey as a fresh PublicKey instance.
+      // Next.js 16 Turbopack can strip class prototypes when objects cross
+      // server/client module boundaries, which breaks Anchor's BN checks.
+      const freshPublicKey = new PublicKey(wallet.publicKey.toBytes());
 
-    return new Program(idl as Idl, PROGRAM_ID, provider);
+      const wrappedWallet = {
+        publicKey: freshPublicKey,
+        signTransaction: wallet.signTransaction,
+        signAllTransactions: wallet.signAllTransactions,
+      };
+
+      const provider = new AnchorProvider(
+        connection,
+        wrappedWallet as any,
+        AnchorProvider.defaultOptions()
+      );
+
+      return new Program(idl as Idl, programId(), provider);
+    } catch (e) {
+      console.warn("Failed to initialize Anchor program:", e);
+      return null;
+    }
   }, [connection, wallet]);
 }
 
 function getVaultPda(trackId: string) {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("vault"), Buffer.from(trackId)],
-    PROGRAM_ID
+    programId()
   );
 }
 
 function getVaultTokenPda(vaultPda: PublicKey) {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("vault_token"), vaultPda.toBuffer()],
-    PROGRAM_ID
+    programId()
   );
 }
 
 function getShareMintPda(vaultPda: PublicKey) {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("share_mint"), vaultPda.toBuffer()],
-    PROGRAM_ID
+    programId()
   );
 }
 
 function getUserPositionPda(vaultPda: PublicKey, user: PublicKey) {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("position"), vaultPda.toBuffer(), user.toBuffer()],
-    PROGRAM_ID
+    programId()
   );
 }
 
@@ -82,7 +106,6 @@ export function useVault(trackId: string | undefined) {
           shareMint: vault.shareMint as PublicKey,
         };
       } catch {
-        // Vault doesn't exist yet
         return null;
       }
     },
@@ -129,12 +152,13 @@ export function useDeposit(trackId: string) {
     mutationFn: async (amount: number) => {
       if (!program || !publicKey) throw new Error("Wallet not connected");
 
+      const mint = usdcMint();
       const [vaultPda] = getVaultPda(trackId);
       const [vaultTokenAccount] = getVaultTokenPda(vaultPda);
       const [shareMint] = getShareMintPda(vaultPda);
       const [userPosition] = getUserPositionPda(vaultPda, publicKey);
 
-      const userUsdc = await getAssociatedTokenAddress(USDC_MINT, publicKey);
+      const userUsdc = await getAssociatedTokenAddress(mint, publicKey);
       const userShares = await getAssociatedTokenAddress(shareMint, publicKey);
 
       // Check if user share account exists, if not create it
@@ -147,7 +171,6 @@ export function useDeposit(trackId: string) {
           publicKey,
           shareMint
         );
-        // We'll prepend this instruction
         const tx = await (program.methods as any)
           .deposit(new BN(amount))
           .accounts({
@@ -200,12 +223,13 @@ export function useWithdraw(trackId: string) {
     mutationFn: async (shares: number) => {
       if (!program || !publicKey) throw new Error("Wallet not connected");
 
+      const mint = usdcMint();
       const [vaultPda] = getVaultPda(trackId);
       const [vaultTokenAccount] = getVaultTokenPda(vaultPda);
       const [shareMint] = getShareMintPda(vaultPda);
       const [userPosition] = getUserPositionPda(vaultPda, publicKey);
 
-      const userUsdc = await getAssociatedTokenAddress(USDC_MINT, publicKey);
+      const userUsdc = await getAssociatedTokenAddress(mint, publicKey);
       const userShares = await getAssociatedTokenAddress(shareMint, publicKey);
 
       const tx = await (program.methods as any)

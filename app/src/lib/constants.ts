@@ -1,19 +1,13 @@
-import { PublicKey } from "@solana/web3.js";
-
-// Program
-export const PROGRAM_ID = new PublicKey(
-  "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-);
+// Program - exported as strings to avoid PublicKey prototype loss across module boundaries
+export const PROGRAM_ID_STR = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS";
 
 // Solana
 export const SOLANA_RPC_URL =
   process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
 export const SOLANA_NETWORK = "devnet" as const;
 
-// USDC on devnet (use the devnet USDC mint for testing)
-export const USDC_MINT = new PublicKey(
-  "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" // Devnet USDC
-);
+// USDC on devnet
+export const USDC_MINT_STR = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
 export const USDC_DECIMALS = 6;
 
 // Audius

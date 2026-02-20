@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useTrack } from "@/hooks/useAudius";
 import { VaultPanel } from "@/components/track/VaultPanel";
-import { PointsBadge } from "@/components/loyalty/PointsBadge";
+import { TrackPlayer } from "@/components/player/TrackPlayer";
 import {
   ArrowLeft,
   Play,
@@ -125,6 +125,16 @@ export default function TrackPage() {
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Player */}
+          <div className="mt-6">
+            <TrackPlayer
+              trackId={trackId}
+              title={track.title}
+              artist={track.user.name}
+              artwork={track.artwork?.["150x150"] || "/placeholder-track.svg"}
+            />
           </div>
 
           {/* Description */}

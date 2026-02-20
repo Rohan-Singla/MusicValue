@@ -16,7 +16,7 @@ import {
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
-import { SOLANA_RPC_URL, PROGRAM_ID, APP_URL, AUDIUS_API_BASE } from "@/lib/constants";
+import { SOLANA_RPC_URL, APP_URL, AUDIUS_API_BASE } from "@/lib/constants";
 
 // CORS headers required by Solana Actions spec
 const ACTIONS_CORS_HEADERS = {

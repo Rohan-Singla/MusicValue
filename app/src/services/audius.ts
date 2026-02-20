@@ -1,6 +1,6 @@
-import { AUDIUS_API_KEY } from "@/lib/constants";
+import { AUDIUS_API_KEY, AUDIUS_API_BASE } from "@/lib/constants";
 
-const BASE_URL = "https://api.audius.co/v1";
+const BASE_URL = AUDIUS_API_BASE;
 
 export interface AudiusUser {
   id: string;
@@ -95,4 +95,13 @@ export async function searchTracks(
   }
 
   return audiusFetch<AudiusTrack[]>("/tracks/search", params);
+}
+
+/** Get the direct stream URL for a track */
+export function getTrackStreamUrl(trackId: string): string {
+  const url = new URL(`${BASE_URL}/tracks/${trackId}/stream`);
+  if (AUDIUS_API_KEY) {
+    url.searchParams.set("api_key", AUDIUS_API_KEY);
+  }
+  return url.toString();
 }
