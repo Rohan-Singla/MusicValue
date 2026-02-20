@@ -1,12 +1,12 @@
 [package]
-name = "fanfi-vault"
+name = "music-value"
 version = "0.1.0"
-description = "FanFi Music Vault - Fans back music tracks and earn yield"
+description = "MusicValue - Fans back music tracks and earn yield"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "fanfi_vault"
+name = "music_value"
 
 [features]
 no-entrypoint = []

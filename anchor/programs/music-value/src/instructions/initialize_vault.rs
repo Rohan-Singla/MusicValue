@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
-use crate::errors::FanfiError;
+use crate::errors::MusicValueError;
 use crate::state::TrackVault;
 
 #[derive(Accounts)]
@@ -54,8 +54,8 @@ pub fn handler(
     audius_track_id: String,
     cap: u64,
 ) -> Result<()> {
-    require!(audius_track_id.len() <= 32, FanfiError::TrackIdTooLong);
-    require!(cap > 0, FanfiError::InvalidCap);
+    require!(audius_track_id.len() <= 32, MusicValueError::TrackIdTooLong);
+    require!(cap > 0, MusicValueError::InvalidCap);
 
     let vault = &mut ctx.accounts.vault;
     vault.authority = ctx.accounts.authority.key();

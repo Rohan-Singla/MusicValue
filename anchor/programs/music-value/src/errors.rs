@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 #[error_code]
-pub enum FanfiError {
+pub enum MusicValueError {
     #[msg("Vault has reached its funding cap")]
     VaultCapExceeded,
     #[msg("Deposit amount must be greater than zero")]

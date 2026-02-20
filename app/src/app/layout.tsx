@@ -4,17 +4,27 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
+import { Poppins } from "next/font/google";
 
 export const metadata: Metadata = {
-  title: "FanFi Music Vault",
+  title: "MusicValue",
   description:
     "Back your favorite music tracks on Solana. Deposit USDC, earn yield, support artists.",
   openGraph: {
-    title: "FanFi Music Vault",
+    title: "MusicValue",
     description: "Back your favorite music tracks and earn yield on Solana",
     type: "website",
   },
 };
+
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+
 
 export default function RootLayout({
   children,
@@ -22,8 +32,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-base text-slate-200 antialiased">
+    <html lang="en" className={`dark`}>
+      <body className={`min-h-screen bg-base text-slate-200 antialiased ${poppins.className}`}>
         <SolanaProvider>
           <div className="flex min-h-screen flex-col">
             <Navbar />

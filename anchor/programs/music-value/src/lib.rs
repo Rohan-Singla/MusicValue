@@ -9,7 +9,7 @@ use instructions::*;
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
-pub mod fanfi_vault {
+pub mod music_value {
     use super::*;
 
     /// Initialize a new vault for an Audius track

@@ -27,8 +27,8 @@ export function Navbar() {
             <Music className="h-5 w-5 text-white" />
           </div>
           <span className="text-lg font-bold">
-            <span className="gradient-text">FanFi</span>
-            <span className="ml-1 text-slate-400 font-normal">Vault</span>
+            <span className="gradient-text">Music</span>
+            <span className="ml-1 text-slate-400 font-normal">Value</span>
           </span>
         </Link>
 

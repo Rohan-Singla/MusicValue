@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Burn, Mint, Token, TokenAccount, Transfer};
 
-use crate::errors::FanfiError;
+use crate::errors::MusicValueError;
 use crate::state::{TrackVault, UserPosition};
 
 #[derive(Accounts)]
@@ -58,10 +58,10 @@ pub struct Withdraw<'info> {
 }
 
 pub fn handler(ctx: Context<Withdraw>, shares: u64) -> Result<()> {
-    require!(shares > 0, FanfiError::ZeroWithdraw);
+    require!(shares > 0, MusicValueError::ZeroWithdraw);
     require!(
         ctx.accounts.user_position.shares_held >= shares,
-        FanfiError::InsufficientShares
+        MusicValueError::InsufficientShares
     );
 
     let vault = &ctx.accounts.vault;

@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { FanfiVault } from "../target/types/fanfi_vault";
+import { MusicValue } from "../target/types/music_value";
 import {
   createMint,
   getOrCreateAssociatedTokenAccount,
@@ -8,11 +8,11 @@ import {
 } from "@solana/spl-token";
 import { assert } from "chai";
 
-describe("fanfi-vault", () => {
+describe("music-value", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.FanfiVault as Program<FanfiVault>;
+  const program = anchor.workspace.MusicValue as Program<MusicValue>;
   const authority = provider.wallet;
 
   const AUDIUS_TRACK_ID = "D7KyD";
@@ -73,7 +73,6 @@ describe("fanfi-vault", () => {
   });
 
   it("deposits USDC into vault", async () => {
-    // Create user USDC token account and mint tokens
     const userUsdc = await getOrCreateAssociatedTokenAccount(
       provider.connection,
       (authority as any).payer,
@@ -90,7 +89,6 @@ describe("fanfi-vault", () => {
       500_000_000 // 500 USDC
     );
 
-    // Create user share token account
     const userShares = await getOrCreateAssociatedTokenAccount(
       provider.connection,
       (authority as any).payer,
@@ -98,7 +96,6 @@ describe("fanfi-vault", () => {
       authority.publicKey
     );
 
-    // Derive user position PDA
     const [userPosition] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from("position"),

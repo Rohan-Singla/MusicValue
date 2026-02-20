@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount, Transfer};
 
-use crate::errors::FanfiError;
+use crate::errors::MusicValueError;
 use crate::state::{TrackVault, UserPosition};
 
 #[derive(Accounts)]
@@ -61,12 +61,12 @@ pub struct Deposit<'info> {
 }
 
 pub fn handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
-    require!(amount > 0, FanfiError::ZeroDeposit);
+    require!(amount > 0, MusicValueError::ZeroDeposit);
 
     let vault = &ctx.accounts.vault;
     require!(
         vault.total_deposited.checked_add(amount).unwrap() <= vault.cap,
-        FanfiError::VaultCapExceeded
+        MusicValueError::VaultCapExceeded
     );
 
     // Transfer USDC from user to vault

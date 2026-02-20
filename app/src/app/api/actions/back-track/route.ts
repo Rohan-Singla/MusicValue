@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
   // Fetch track info from Audius for metadata
   let title = "Back this track";
   let description = "Deposit USDC into the music vault and earn yield";
-  let icon = `${APP_URL}/fanfi-icon.png`;
+  let icon = `${APP_URL}/musicvalue-icon.png`;
 
   try {
     const res = await fetch(`${AUDIUS_API_BASE}/tracks/${trackId}`, {

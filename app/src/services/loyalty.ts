@@ -1,4 +1,4 @@
-// Loyalty Service for FanFi Music Vault
+// Loyalty Service for MusicValue
 // TODO: Integrate Torque SDK for on-chain loyalty tracking.
 // Currently uses localStorage as a fallback until Torque campaigns
 // are configured via TORQUE_API_KEY and TORQUE_PUBLISHER_HANDLE.
@@ -59,7 +59,7 @@ const ACTION_POINTS: Record<LoyaltyAction["type"], number> = {
 // ---------------------------------------------------------------------------
 
 class LoyaltyService {
-  private readonly storageKey = "fanfi_loyalty";
+  private readonly storageKey = "musicvalue_loyalty";
 
   // ---- private helpers ---------------------------------------------------
 
