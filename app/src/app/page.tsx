@@ -50,20 +50,6 @@ function HeroSection() {
           </a>
         </div>
 
-        {/* Stats */}
-        <div className="mx-auto mt-12 grid max-w-lg grid-cols-3 gap-6">
-          {[
-            { label: "Total Backed", value: "$0", icon: TrendingUp },
-            { label: "Active Vaults", value: "0", icon: Shield },
-            { label: "Fan Backers", value: "0", icon: Music },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <stat.icon className="mx-auto h-5 w-5 text-accent-purple" />
-              <p className="mt-2 text-2xl font-bold text-white">{stat.value}</p>
-              <p className="text-xs text-slate-500">{stat.label}</p>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );

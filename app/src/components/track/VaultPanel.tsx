@@ -1,19 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useQuery } from "@tanstack/react-query";
+import { PublicKey } from "@solana/web3.js";
+import { getAssociatedTokenAddress, getAccount } from "@solana/spl-token";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Share2,
   TrendingUp,
   Loader2,
+  ExternalLink,
+  Wallet,
 } from "lucide-react";
-import { useVault, useUserPosition, useDeposit, useWithdraw } from "@/hooks/useVault";
+import { useVault, useUserPosition, useDeposit, useWithdraw, useInitializeVault } from "@/hooks/useVault";
 import { useLoyalty } from "@/hooks/useLoyalty";
 import { copyBlinkToClipboard } from "@/services/blinks";
 import toast from "react-hot-toast";
-import { USDC_DECIMALS } from "@/lib/constants";
+import { USDC_DECIMALS, USDC_MINT_STR } from "@/lib/constants";
 
 interface VaultPanelProps {
   trackId: string;
@@ -27,21 +32,52 @@ function formatUSDC(amount: number): string {
   })}`;
 }
 
+function explorerUrl(txHash: string): string {
+  return `https://explorer.solana.com/tx/${txHash}?cluster=devnet`;
+}
+
+function useUsdcBalance() {
+  const { connection } = useConnection();
+  const { publicKey } = useWallet();
+
+  return useQuery({
+    queryKey: ["usdc-balance", publicKey?.toBase58()],
+    queryFn: async () => {
+      if (!publicKey) return null;
+      try {
+        const mint = new PublicKey(USDC_MINT_STR);
+        const ata = await getAssociatedTokenAddress(mint, publicKey);
+        const account = await getAccount(connection, ata);
+        return Number(account.amount);
+      } catch {
+        return 0;
+      }
+    },
+    enabled: !!publicKey,
+    refetchInterval: 15_000,
+  });
+}
+
 export function VaultPanel({ trackId, trackTitle }: VaultPanelProps) {
   const { publicKey } = useWallet();
   const { data: vault, isLoading: vaultLoading } = useVault(trackId);
   const { data: position } = useUserPosition(trackId);
   const deposit = useDeposit(trackId);
   const withdraw = useWithdraw(trackId);
+  const initVault = useInitializeVault(trackId);
   const { addPoints } = useLoyalty();
+  const { data: usdcBalance } = useUsdcBalance();
 
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"deposit" | "withdraw">("deposit");
 
   const progress = vault
     ? Math.min((vault.totalDeposited / vault.cap) * 100, 100)
     : 0;
+
+  const balanceUSDC = usdcBalance != null ? usdcBalance / 10 ** USDC_DECIMALS : null;
 
   const handleDeposit = async () => {
     const amount = parseFloat(depositAmount);
@@ -50,11 +86,17 @@ export function VaultPanel({ trackId, trackTitle }: VaultPanelProps) {
       return;
     }
 
+    if (balanceUSDC != null && amount > balanceUSDC) {
+      toast.error(`Insufficient USDC balance. You have $${balanceUSDC.toFixed(2)}`);
+      return;
+    }
+
     try {
       const lamports = Math.floor(amount * 10 ** USDC_DECIMALS);
-      await deposit.mutateAsync(lamports);
+      const txHash = await deposit.mutateAsync(lamports);
       addPoints("back_track", trackId);
       setDepositAmount("");
+      setLastTxHash(txHash);
       toast.success(`Backed ${trackTitle} with $${amount} USDC`);
     } catch (err: any) {
       toast.error(err.message || "Deposit failed");
@@ -70,8 +112,9 @@ export function VaultPanel({ trackId, trackTitle }: VaultPanelProps) {
 
     try {
       const shares = Math.floor(amount * 10 ** USDC_DECIMALS);
-      await withdraw.mutateAsync(shares);
+      const txHash = await withdraw.mutateAsync(shares);
       setWithdrawAmount("");
+      setLastTxHash(txHash);
       toast.success(`Withdrew $${amount} from ${trackTitle}`);
     } catch (err: any) {
       toast.error(err.message || "Withdraw failed");
@@ -101,6 +144,20 @@ export function VaultPanel({ trackId, trackTitle }: VaultPanelProps) {
           Share Blink
         </button>
       </div>
+
+      {/* Wallet balance */}
+      {publicKey && (
+        <div className="mt-3 flex items-center gap-2 rounded-lg bg-base-50 px-3 py-2">
+          <Wallet className="h-3.5 w-3.5 text-slate-400" />
+          <span className="text-xs text-slate-400">Your USDC:</span>
+          <span className="text-xs font-semibold text-white">
+            {balanceUSDC != null ? `$${balanceUSDC.toFixed(2)}` : "..."}
+          </span>
+          {balanceUSDC != null && balanceUSDC === 0 && (
+            <span className="ml-auto text-[10px] text-yellow-400">No USDC</span>
+          )}
+        </div>
+      )}
 
       {/* Vault stats */}
       <div className="mt-5 grid grid-cols-3 gap-4">
@@ -227,6 +284,7 @@ export function VaultPanel({ trackId, trackTitle }: VaultPanelProps) {
               onClick={handleDeposit}
               disabled={
                 !publicKey ||
+                !vault ||
                 deposit.isPending ||
                 !depositAmount ||
                 parseFloat(depositAmount) <= 0
@@ -240,9 +298,11 @@ export function VaultPanel({ trackId, trackTitle }: VaultPanelProps) {
               )}
               {!publicKey
                 ? "Connect Wallet"
-                : deposit.isPending
-                  ? "Backing..."
-                  : "Back This Track"}
+                : !vault
+                  ? "No Vault Yet"
+                  : deposit.isPending
+                    ? "Backing..."
+                    : "Back This Track"}
             </button>
           </div>
         ) : (
@@ -294,13 +354,52 @@ export function VaultPanel({ trackId, trackTitle }: VaultPanelProps) {
         )}
       </div>
 
-      {/* Vault not initialized notice */}
+      {/* Last transaction link */}
+      {lastTxHash && (
+        <div className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-accent-cyan/20 bg-accent-cyan/5 px-3 py-2">
+          <span className="text-xs text-slate-400">Last tx:</span>
+          <a
+            href={explorerUrl(lastTxHash)}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1 text-xs font-medium text-accent-cyan hover:underline"
+          >
+            {lastTxHash.slice(0, 8)}...{lastTxHash.slice(-8)}
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+      )}
+
+      {/* Vault not initialized - create it */}
       {!vaultLoading && !vault && (
-        <div className="mt-4 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-3 text-center">
-          <p className="text-xs text-yellow-400">
-            Vault not yet initialized for this track. First deposit will create
-            it.
+        <div className="mt-4 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-center">
+          <p className="text-xs text-yellow-400 mb-3">
+            No vault exists for this track yet. Create one to start accepting deposits.
           </p>
+          <button
+            onClick={async () => {
+              if (!publicKey) {
+                toast.error("Connect your wallet first");
+                return;
+              }
+              try {
+                // Default cap: 10,000 USDC
+                const cap = 10_000 * 10 ** USDC_DECIMALS;
+                const txHash = await initVault.mutateAsync(cap);
+                setLastTxHash(txHash);
+                toast.success("Vault created! You can now accept deposits.");
+              } catch (err: any) {
+                toast.error(err.message || "Failed to create vault");
+              }
+            }}
+            disabled={!publicKey || initVault.isPending}
+            className="btn-primary inline-flex items-center gap-2 text-sm"
+          >
+            {initVault.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : null}
+            {initVault.isPending ? "Creating Vault..." : "Create Vault"}
+          </button>
         </div>
       )}
     </div>

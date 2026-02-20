@@ -3,19 +3,18 @@
 import { useMemo } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { PublicKey, SystemProgram } from "@solana/web3.js";
+import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import {
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
   getAccount,
 } from "@solana/spl-token";
-import { Program, AnchorProvider, BN, Idl } from "@coral-xyz/anchor";
+import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import { PROGRAM_ID_STR, USDC_MINT_STR } from "@/lib/constants";
 
 import idl from "@/lib/idl.json";
 
-// Construct PublicKey lazily to avoid prototype loss across Next.js module boundaries
 function programId() {
   return new PublicKey(PROGRAM_ID_STR);
 }
@@ -32,9 +31,6 @@ function useProgram() {
     if (!wallet.publicKey || !wallet.signTransaction) return null;
 
     try {
-      // Rebuild the wallet publicKey as a fresh PublicKey instance.
-      // Next.js 16 Turbopack can strip class prototypes when objects cross
-      // server/client module boundaries, which breaks Anchor's BN checks.
       const freshPublicKey = new PublicKey(wallet.publicKey.toBytes());
 
       const wrappedWallet = {
@@ -49,7 +45,8 @@ function useProgram() {
         AnchorProvider.defaultOptions()
       );
 
-      return new Program(idl as Idl, programId(), provider);
+      // Anchor 0.30+ new IDL format: Program constructor reads address from IDL
+      return new Program(idl as any, provider);
     } catch (e) {
       console.warn("Failed to initialize Anchor program:", e);
       return null;
@@ -141,6 +138,43 @@ export function useUserPosition(trackId: string | undefined) {
   });
 }
 
+/** Initialize a vault for a track (called when vault doesn't exist yet) */
+export function useInitializeVault(trackId: string) {
+  const program = useProgram();
+  const { publicKey } = useWallet();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (cap: number) => {
+      if (!program || !publicKey) throw new Error("Wallet not connected");
+
+      const mint = usdcMint();
+      const [vaultPda] = getVaultPda(trackId);
+      const [vaultTokenAccount] = getVaultTokenPda(vaultPda);
+      const [shareMint] = getShareMintPda(vaultPda);
+
+      const tx = await (program.methods as any)
+        .initializeVault(trackId, new BN(cap))
+        .accounts({
+          authority: publicKey,
+          vault: vaultPda,
+          usdcMint: mint,
+          vaultTokenAccount,
+          shareMint,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .rpc();
+
+      return tx;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vault", trackId] });
+    },
+  });
+}
+
 /** Deposit USDC into a track vault */
 export function useDeposit(trackId: string) {
   const program = useProgram();
@@ -162,34 +196,21 @@ export function useDeposit(trackId: string) {
       const userShares = await getAssociatedTokenAddress(shareMint, publicKey);
 
       // Check if user share account exists, if not create it
+      let preIx: any[] = [];
       try {
         await getAccount(connection, userShares);
       } catch {
-        const createAtaIx = createAssociatedTokenAccountInstruction(
-          publicKey,
-          userShares,
-          publicKey,
-          shareMint
-        );
-        const tx = await (program.methods as any)
-          .deposit(new BN(amount))
-          .accounts({
-            user: publicKey,
-            vault: vaultPda,
-            userPosition,
-            userUsdc,
-            vaultTokenAccount,
-            shareMint,
+        preIx.push(
+          createAssociatedTokenAccountInstruction(
+            publicKey,
             userShares,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId,
-          })
-          .preInstructions([createAtaIx])
-          .rpc();
-        return tx;
+            publicKey,
+            shareMint
+          )
+        );
       }
 
-      const tx = await (program.methods as any)
+      const builder = (program.methods as any)
         .deposit(new BN(amount))
         .accounts({
           user: publicKey,
@@ -201,10 +222,13 @@ export function useDeposit(trackId: string) {
           userShares,
           tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
-        })
-        .rpc();
+        });
 
-      return tx;
+      if (preIx.length > 0) {
+        builder.preInstructions(preIx);
+      }
+
+      return await builder.rpc();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vault", trackId] });
