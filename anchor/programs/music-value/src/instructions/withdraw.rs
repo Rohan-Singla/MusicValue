@@ -67,9 +67,13 @@ pub fn handler(ctx: Context<Withdraw>, shares: u64) -> Result<()> {
     let vault = &ctx.accounts.vault;
 
     // Calculate USDC to return (proportional to shares)
-    // For MVP: 1 share = 1 USDC (no yield calculation yet)
-    // Future: usdc_amount = shares * vault_balance / total_shares
-    let usdc_amount = shares;
+    // usdc_amount = shares * total_deposited / total_shares
+    // This means if yield was distributed (total_deposited grew), each share is worth more
+    let usdc_amount = (shares as u128)
+        .checked_mul(vault.total_deposited as u128)
+        .unwrap()
+        .checked_div(vault.total_shares as u128)
+        .unwrap() as u64;
 
     // Transfer USDC from vault to user
     let track_id = vault.audius_track_id.as_bytes();

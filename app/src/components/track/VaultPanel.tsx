@@ -211,7 +211,7 @@ export function VaultPanel({ trackId, trackTitle }: VaultPanelProps) {
           <div className="mt-2 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-white">
-                {formatUSDC(position.sharesHeld)} shares
+                {(position.sharesHeld / 10 ** USDC_DECIMALS).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} shares
               </p>
               <p className="text-xs text-slate-400">
                 {formatUSDC(position.totalDeposited)} deposited

@@ -30,4 +30,11 @@ pub mod music_value {
     pub fn withdraw(ctx: Context<Withdraw>, shares: u64) -> Result<()> {
         instructions::withdraw::handler(ctx, shares)
     }
+
+    /// Distribute yield into the vault (authority only)
+    /// Increases total_deposited without minting new shares,
+    /// making each existing share worth more USDC
+    pub fn distribute_yield(ctx: Context<DistributeYield>, amount: u64) -> Result<()> {
+        instructions::distribute_yield::handler(ctx, amount)
+    }
 }

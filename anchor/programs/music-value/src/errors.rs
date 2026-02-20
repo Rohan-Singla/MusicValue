@@ -14,4 +14,8 @@ pub enum MusicValueError {
     TrackIdTooLong,
     #[msg("Vault cap must be greater than zero")]
     InvalidCap,
+    #[msg("Only the vault authority can perform this action")]
+    Unauthorized,
+    #[msg("Cannot distribute yield when there are no shareholders")]
+    NoShareholders,
 }

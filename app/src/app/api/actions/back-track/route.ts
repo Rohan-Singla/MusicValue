@@ -1,23 +1,61 @@
-/**
- * Solana Actions API endpoint for "Back this track"
- *
- * GET  - Returns action metadata (title, icon, description, buttons)
- * POST - Returns a serialized deposit transaction for the user to sign
- *
- * Follows the Solana Actions spec: https://solana.com/developers/guides/advanced/actions
- * Compatible with Blinks via dial.to and wallet extensions.
- */
-
 import { NextRequest, NextResponse } from "next/server";
 import {
   Connection,
   PublicKey,
   Transaction,
+  TransactionInstruction,
   SystemProgram,
-  SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
-import { SOLANA_RPC_URL, APP_URL, AUDIUS_API_BASE } from "@/lib/constants";
+import {
+  getAssociatedTokenAddress,
+  createAssociatedTokenAccountInstruction,
+  TOKEN_PROGRAM_ID,
+  getAccount,
+} from "@solana/spl-token";
+import {
+  SOLANA_RPC_URL,
+  APP_URL,
+  AUDIUS_API_BASE,
+  PROGRAM_ID_STR,
+  USDC_MINT_STR,
+  USDC_DECIMALS,
+} from "@/lib/constants";
 import { ACTIONS_CORS_HEADERS } from "@/lib/actions";
+
+// IDL discriminators from the compiled program
+const DEPOSIT_DISCRIMINATOR = Buffer.from([242, 35, 198, 137, 82, 225, 242, 182]);
+
+function programId() {
+  return new PublicKey(PROGRAM_ID_STR);
+}
+
+function getVaultPda(trackId: string) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("vault"), Buffer.from(trackId)],
+    programId()
+  );
+}
+
+function getVaultTokenPda(vaultPda: PublicKey) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("vault_token"), vaultPda.toBuffer()],
+    programId()
+  );
+}
+
+function getShareMintPda(vaultPda: PublicKey) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("share_mint"), vaultPda.toBuffer()],
+    programId()
+  );
+}
+
+function getUserPositionPda(vaultPda: PublicKey, user: PublicKey) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("position"), vaultPda.toBuffer(), user.toBuffer()],
+    programId()
+  );
+}
 
 export const OPTIONS = () => {
   return NextResponse.json(null, { headers: ACTIONS_CORS_HEADERS });
@@ -138,24 +176,66 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const connection = new Connection(SOLANA_RPC_URL);
-    const { blockhash, lastValidBlockHeight } =
-      await connection.getLatestBlockhash();
+    const connection = new Connection(SOLANA_RPC_URL, "confirmed");
+    const mint = new PublicKey(USDC_MINT_STR);
+    const [vaultPda] = getVaultPda(trackId);
+    const [vaultTokenAccount] = getVaultTokenPda(vaultPda);
+    const [shareMint] = getShareMintPda(vaultPda);
+    const [userPosition] = getUserPositionPda(vaultPda, userPubkey);
 
-    // Build a placeholder transaction
-    // In production, this would construct the actual deposit instruction
-    // For MVP, we create a memo transaction as a placeholder
+    const userUsdc = await getAssociatedTokenAddress(mint, userPubkey);
+    const userShares = await getAssociatedTokenAddress(shareMint, userPubkey);
+
+    const lamports = Math.floor(amount * 10 ** USDC_DECIMALS);
+
+    // Build instruction data: 8-byte discriminator + 8-byte u64 amount (little-endian)
+    const amountBuf = Buffer.alloc(8);
+    amountBuf.writeBigUInt64LE(BigInt(lamports));
+    const data = Buffer.concat([DEPOSIT_DISCRIMINATOR, amountBuf]);
+
+    const instructions: TransactionInstruction[] = [];
+
+    // Create user share token account if it doesn't exist
+    try {
+      await getAccount(connection, userShares);
+    } catch {
+      instructions.push(
+        createAssociatedTokenAccountInstruction(
+          userPubkey,
+          userShares,
+          userPubkey,
+          shareMint
+        )
+      );
+    }
+
+    // Build the deposit instruction matching the IDL account order
+    instructions.push(
+      new TransactionInstruction({
+        programId: programId(),
+        keys: [
+          { pubkey: userPubkey, isSigner: true, isWritable: true },
+          { pubkey: vaultPda, isSigner: false, isWritable: true },
+          { pubkey: userPosition, isSigner: false, isWritable: true },
+          { pubkey: userUsdc, isSigner: false, isWritable: true },
+          { pubkey: vaultTokenAccount, isSigner: false, isWritable: true },
+          { pubkey: shareMint, isSigner: false, isWritable: true },
+          { pubkey: userShares, isSigner: false, isWritable: true },
+          { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        ],
+        data,
+      })
+    );
+
+    const { blockhash, lastValidBlockHeight } =
+      await connection.getLatestBlockhash("confirmed");
+
     const transaction = new Transaction({
       feePayer: userPubkey,
       blockhash,
       lastValidBlockHeight,
-    }).add(
-      SystemProgram.transfer({
-        fromPubkey: userPubkey,
-        toPubkey: userPubkey, // self-transfer as placeholder
-        lamports: 0,
-      })
-    );
+    }).add(...instructions);
 
     const serializedTx = transaction
       .serialize({ requireAllSignatures: false })
