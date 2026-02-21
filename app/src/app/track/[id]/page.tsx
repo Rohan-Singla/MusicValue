@@ -214,7 +214,7 @@ export default function TrackPage() {
 
         {/* Right: Vault panel */}
         <div className="space-y-4">
-          <VaultPanel trackId={trackId} trackTitle={track.title} />
+          <VaultPanel trackId={trackId} trackTitle={track.title} artistUserId={track.user.id} />
         </div>
       </div>
     </div>

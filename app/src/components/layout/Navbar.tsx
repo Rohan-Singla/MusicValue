@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { WalletButton } from "@/components/wallet/WalletButton";
 import { PointsBadge } from "@/components/loyalty/PointsBadge";
-import { Music, Search } from "lucide-react";
+import { Music, Search, Mic2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -48,6 +48,13 @@ export function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
+          <Link
+            href="/artist"
+            className="hidden sm:flex items-center gap-1.5 rounded-xl border border-base-200 px-3 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:border-accent-purple/50 hover:text-accent-purple"
+          >
+            <Mic2 className="h-3.5 w-3.5" />
+            Artist Portal
+          </Link>
           <PointsBadge />
           <WalletButton />
         </div>

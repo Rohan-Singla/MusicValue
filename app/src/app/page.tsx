@@ -4,7 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { useTrendingTracks, useSearchTracks } from "@/hooks/useAudius";
 import { TrackGrid } from "@/components/track/TrackGrid";
-import { Music, TrendingUp, Zap, Shield, ArrowRight } from "lucide-react";
+import { Music, TrendingUp, Zap, Shield, ArrowRight, Mic2 } from "lucide-react";
+import Link from "next/link";
 
 function HeroSection() {
   return (
@@ -113,6 +114,28 @@ function HomeContent() {
               <p className="mt-1 text-xs text-slate-400">{item.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Artist CTA */}
+      <section className="py-10">
+        <div className="relative overflow-hidden rounded-2xl border border-accent-purple/20 bg-accent-purple/5 px-8 py-10 text-center">
+          <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-br from-accent-purple/10 via-transparent to-accent-cyan/5 pointer-events-none" />
+          <div className="relative">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-purple/20 mx-auto mb-4">
+              <Mic2 className="h-6 w-6 text-accent-purple" />
+            </div>
+            <h2 className="text-xl font-bold text-white">Are You an Artist?</h2>
+            <p className="mt-2 text-sm text-slate-400 max-w-md mx-auto">
+              Verify your Audius identity, create a vault for your track, and let fans back your music
+              while earning DeFi yield. You commit to distributing royalty yield back to your backers.
+            </p>
+            <Link href="/artist" className="btn-primary inline-flex items-center gap-2 mt-5">
+              <Music className="h-4 w-4" />
+              Open Artist Portal
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </section>
 

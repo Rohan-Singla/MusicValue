@@ -97,6 +97,10 @@ export async function searchTracks(
   return audiusFetch<AudiusTrack[]>("/tracks/search", params);
 }
 
+export async function getUserTracks(userId: string): Promise<AudiusTrack[]> {
+  return audiusFetch<AudiusTrack[]>(`/users/${userId}/tracks`, { limit: "100" });
+}
+
 /** Get the direct stream URL for a track */
 export function getTrackStreamUrl(trackId: string): string {
   const url = new URL(`${BASE_URL}/tracks/${trackId}/stream`);

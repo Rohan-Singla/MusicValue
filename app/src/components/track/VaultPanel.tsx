@@ -13,16 +13,20 @@ import {
   Loader2,
   ExternalLink,
   Wallet,
+  Music,
 } from "lucide-react";
-import { useVault, useUserPosition, useDeposit, useWithdraw, useInitializeVault } from "@/hooks/useVault";
+import { useVault, useUserPosition, useDeposit, useWithdraw } from "@/hooks/useVault";
 import { useLoyalty } from "@/hooks/useLoyalty";
+import { useAudiusAuth } from "@/hooks/useAudiusAuth";
 import { copyBlinkToClipboard } from "@/services/blinks";
 import toast from "react-hot-toast";
 import { USDC_DECIMALS, USDC_MINT_STR } from "@/lib/constants";
+import Link from "next/link";
 
 interface VaultPanelProps {
   trackId: string;
   trackTitle: string;
+  artistUserId?: string;
 }
 
 function formatUSDC(amount: number): string {
@@ -58,13 +62,14 @@ function useUsdcBalance() {
   });
 }
 
-export function VaultPanel({ trackId, trackTitle }: VaultPanelProps) {
+export function VaultPanel({ trackId, trackTitle, artistUserId }: VaultPanelProps) {
   const { publicKey } = useWallet();
+  const { user: audiusUser } = useAudiusAuth();
+  const isArtist = !!(audiusUser && artistUserId && audiusUser.userId === artistUserId);
   const { data: vault, isLoading: vaultLoading } = useVault(trackId);
   const { data: position } = useUserPosition(trackId);
   const deposit = useDeposit(trackId);
   const withdraw = useWithdraw(trackId);
-  const initVault = useInitializeVault(trackId);
   const { addPoints } = useLoyalty();
   const { data: usdcBalance } = useUsdcBalance();
 
@@ -370,36 +375,34 @@ export function VaultPanel({ trackId, trackTitle }: VaultPanelProps) {
         </div>
       )}
 
-      {/* Vault not initialized - create it */}
+      {/* Vault not initialized */}
       {!vaultLoading && !vault && (
         <div className="mt-4 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-center">
-          <p className="text-xs text-yellow-400 mb-3">
-            No vault exists for this track yet. Create one to start accepting deposits.
-          </p>
-          <button
-            onClick={async () => {
-              if (!publicKey) {
-                toast.error("Connect your wallet first");
-                return;
-              }
-              try {
-                // Default cap: 10,000 USDC
-                const cap = 10_000 * 10 ** USDC_DECIMALS;
-                const txHash = await initVault.mutateAsync(cap);
-                setLastTxHash(txHash);
-                toast.success("Vault created! You can now accept deposits.");
-              } catch (err: any) {
-                toast.error(err.message || "Failed to create vault");
-              }
-            }}
-            disabled={!publicKey || initVault.isPending}
-            className="btn-primary inline-flex items-center gap-2 text-sm"
-          >
-            {initVault.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : null}
-            {initVault.isPending ? "Creating Vault..." : "Create Vault"}
-          </button>
+          {isArtist ? (
+            <>
+              <p className="text-xs text-yellow-400 mb-3">
+                No vault exists for this track yet. Create one via the Artist Portal.
+              </p>
+              <Link
+                href="/artist/register"
+                className="btn-primary inline-flex items-center gap-2 text-sm"
+              >
+                Create Vault in Artist Portal
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-yellow-400 mb-2">
+                No vault exists for this track yet.
+              </p>
+              <p className="text-[11px] text-slate-500">
+                Only the artist can create a vault.{" "}
+                <Link href="/artist" className="text-accent-purple hover:underline">
+                  Are you the artist?
+                </Link>
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>

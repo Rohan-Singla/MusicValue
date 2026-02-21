@@ -237,6 +237,29 @@ export function useDeposit(trackId: string) {
   });
 }
 
+/**
+ * Distribute yield to depositors (artist-only UI action).
+ * The on-chain program does not yet have a distribute_yield instruction,
+ * so this is a UI-only stub that simulates the flow.
+ */
+export function useDistributeYield(trackId: string) {
+  const { publicKey } = useWallet();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (amountUsdc: number) => {
+      if (!publicKey) throw new Error("Wallet not connected");
+      // Stub: in production this would call program.methods.distributeYield(...)
+      // For now it just simulates a delay and returns a fake tx
+      await new Promise((res) => setTimeout(res, 1500));
+      return "simulated_distribute_yield_" + Date.now().toString(36);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vault", trackId] });
+    },
+  });
+}
+
 /** Withdraw from a track vault */
 export function useWithdraw(trackId: string) {
   const program = useProgram();
