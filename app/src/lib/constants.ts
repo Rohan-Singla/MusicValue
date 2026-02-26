@@ -1,5 +1,5 @@
 // Program - exported as strings to avoid PublicKey prototype loss across module boundaries
-export const PROGRAM_ID_STR = "rj7W3p82B8xKoQRb5dVDCkmGJu4uY3LPvR8uZBGmh6c";
+export const PROGRAM_ID_STR = "4Axew2EExar585doSH8vpaFyT8Nu4wJ9xexN1WvgTZir";
 
 // Backend URL — all sensitive RPC/API calls go through here
 export const BACKEND_URL =
@@ -7,6 +7,9 @@ export const BACKEND_URL =
 
 // Solana RPC proxied through the backend (keeps the real RPC URL + API key server-side only)
 export const SOLANA_RPC_URL = `${BACKEND_URL}/rpc`;
+// WebSocket goes directly to devnet — WS subscriptions only carry tx signatures, no secrets
+export const SOLANA_WS_URL =
+  process.env.NEXT_PUBLIC_SOLANA_WS_URL || "wss://api.devnet.solana.com/";
 export const SOLANA_NETWORK = "devnet" as const;
 
 // USDC on devnet

@@ -18,4 +18,10 @@ pub enum MusicValueError {
     Unauthorized,
     #[msg("Cannot distribute yield when there are no shareholders")]
     NoShareholders,
+    #[msg("Royalty percentage must be between 0 and 100")]
+    InvalidRoyaltyPct,
+    #[msg("Distribution interval must be 0 (monthly), 1 (quarterly), or 2 (milestone)")]
+    InvalidDistributionInterval,
+    #[msg("Pledge note is too long (max 200 characters)")]
+    PledgeNoteTooLong,
 }

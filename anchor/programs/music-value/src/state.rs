@@ -14,16 +14,30 @@ pub struct TrackVault {
     pub vault_token_account: Pubkey,
     /// Share token mint (fungible token representing vault participation)
     pub share_mint: Pubkey,
-    /// Total USDC deposited in the vault
+    /// Total USDC deposited in the vault (principal + distributed yield)
     pub total_deposited: u64,
     /// Maximum USDC that can be deposited (funding cap)
     pub cap: u64,
-    /// Total share tokens minted
+    /// Total share tokens minted (equals total principal; never changes on yield)
     pub total_shares: u64,
     /// Vault creation timestamp
     pub created_at: i64,
     /// PDA bump seed
     pub bump: u8,
+
+    // ── Royalty Pledge (on-chain commitment by artist) ──────────────────────
+    /// Percentage of royalties pledged to backers (0-100)
+    pub royalty_pct: u8,
+    /// Distribution interval: 0 = monthly, 1 = quarterly, 2 = milestone
+    pub distribution_interval: u8,
+    /// Vault duration in months (0 = ongoing / no end date)
+    pub vault_duration_months: u16,
+    /// Artist's public pledge note to backers (max 200 chars)
+    #[max_len(200)]
+    pub pledge_note: String,
+    /// Cumulative USDC yield distributed by artist into vault
+    /// (appended last to preserve layout of pre-existing accounts)
+    pub total_yield_distributed: u64,
 }
 
 #[account]

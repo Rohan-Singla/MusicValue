@@ -1,5 +1,5 @@
 {
-  "address": "rj7W3p82B8xKoQRb5dVDCkmGJu4uY3LPvR8uZBGmh6c",
+  "address": "4Axew2EExar585doSH8vpaFyT8Nu4wJ9xexN1WvgTZir",
   "metadata": {
     "name": "music_value",
     "version": "0.1.0",
@@ -130,9 +130,9 @@
     {
       "name": "distribute_yield",
       "docs": [
-        "Distribute yield into the vault (authority only)",
+        "Distribute yield into the vault (authority only).",
         "Increases total_deposited without minting new shares,",
-        "making each existing share worth more USDC"
+        "making each existing share worth more USDC."
       ],
       "discriminator": [
         233,
@@ -205,7 +205,7 @@
     {
       "name": "initialize_vault",
       "docs": [
-        "Initialize a new vault for an Audius track"
+        "Initialize a new vault for an Audius track with a royalty pledge"
       ],
       "discriminator": [
         48,
@@ -333,6 +333,90 @@
         {
           "name": "cap",
           "type": "u64"
+        },
+        {
+          "name": "royalty_pct",
+          "type": "u8"
+        },
+        {
+          "name": "distribution_interval",
+          "type": "u8"
+        },
+        {
+          "name": "vault_duration_months",
+          "type": "u16"
+        },
+        {
+          "name": "pledge_note",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "update_pledge",
+      "docs": [
+        "Update the royalty pledge fields on an existing vault (authority only).",
+        "Useful when an artist wants to revise their commitment to backers."
+      ],
+      "discriminator": [
+        45,
+        167,
+        165,
+        215,
+        223,
+        29,
+        200,
+        170
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The vault authority (artist)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.audius_track_id",
+                "account": "TrackVault"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "royalty_pct",
+          "type": "u8"
+        },
+        {
+          "name": "distribution_interval",
+          "type": "u8"
+        },
+        {
+          "name": "vault_duration_months",
+          "type": "u16"
+        },
+        {
+          "name": "pledge_note",
+          "type": "string"
         }
       ]
     },
@@ -518,6 +602,21 @@
       "code": 6007,
       "name": "NoShareholders",
       "msg": "Cannot distribute yield when there are no shareholders"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidRoyaltyPct",
+      "msg": "Royalty percentage must be between 0 and 100"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidDistributionInterval",
+      "msg": "Distribution interval must be 0 (monthly), 1 (quarterly), or 2 (milestone)"
+    },
+    {
+      "code": 6010,
+      "name": "PledgeNoteTooLong",
+      "msg": "Pledge note is too long (max 200 characters)"
     }
   ],
   "types": [
@@ -564,7 +663,7 @@
           {
             "name": "total_deposited",
             "docs": [
-              "Total USDC deposited in the vault"
+              "Total USDC deposited in the vault (principal + distributed yield)"
             ],
             "type": "u64"
           },
@@ -578,7 +677,7 @@
           {
             "name": "total_shares",
             "docs": [
-              "Total share tokens minted"
+              "Total share tokens minted (equals total principal; never changes on yield)"
             ],
             "type": "u64"
           },
@@ -595,6 +694,42 @@
               "PDA bump seed"
             ],
             "type": "u8"
+          },
+          {
+            "name": "royalty_pct",
+            "docs": [
+              "Percentage of royalties pledged to backers (0-100)"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "distribution_interval",
+            "docs": [
+              "Distribution interval: 0 = monthly, 1 = quarterly, 2 = milestone"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "vault_duration_months",
+            "docs": [
+              "Vault duration in months (0 = ongoing / no end date)"
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "pledge_note",
+            "docs": [
+              "Artist's public pledge note to backers (max 200 chars)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "total_yield_distributed",
+            "docs": [
+              "Cumulative USDC yield distributed by artist into vault",
+              "(appended last to preserve layout of pre-existing accounts)"
+            ],
+            "type": "u64"
           }
         ]
       }

@@ -9,7 +9,7 @@ import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { PhantomWalletAdapter, SolflareWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { SOLANA_RPC_URL } from "@/lib/constants";
+import { SOLANA_RPC_URL, SOLANA_WS_URL } from "@/lib/constants";
 import { AudiusAuthProvider } from "@/providers/AudiusAuthProvider";
 
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -34,7 +34,7 @@ export const SolanaProvider: FC<Props> = ({ children }) => {
   );
 
   return (
-    <ConnectionProvider endpoint={SOLANA_RPC_URL}>
+    <ConnectionProvider endpoint={SOLANA_RPC_URL} config={{ wsEndpoint: SOLANA_WS_URL }}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <QueryClientProvider client={queryClient}>

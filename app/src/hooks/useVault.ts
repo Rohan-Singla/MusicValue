@@ -139,14 +139,22 @@ export function useUserPosition(trackId: string | undefined) {
   });
 }
 
-/** Initialize a vault for a track (called when vault doesn't exist yet) */
+export interface InitializeVaultParams {
+  cap: number;
+  royaltyPct: number;
+  distributionInterval: number; // 0=monthly, 1=quarterly, 2=milestone
+  vaultDurationMonths: number;  // 0 = ongoing
+  pledgeNote: string;
+}
+
+/** Initialize a vault for a track with a royalty pledge */
 export function useInitializeVault(trackId: string) {
   const program = useProgram();
   const { publicKey } = useWallet();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (cap: number) => {
+    mutationFn: async (params: InitializeVaultParams) => {
       if (!program || !publicKey) throw new Error("Wallet not connected");
 
       const mint = usdcMint();
@@ -155,7 +163,14 @@ export function useInitializeVault(trackId: string) {
       const [shareMint] = getShareMintPda(vaultPda);
 
       const tx = await (program.methods as any)
-        .initializeVault(trackId, new BN(cap))
+        .initializeVault(
+          trackId,
+          new BN(params.cap),
+          params.royaltyPct,
+          params.distributionInterval,
+          params.vaultDurationMonths,
+          params.pledgeNote
+        )
         .accounts({
           authority: publicKey,
           vault: vaultPda,

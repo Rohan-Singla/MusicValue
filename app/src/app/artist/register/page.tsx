@@ -43,6 +43,7 @@ export default function ArtistRegisterPage() {
   const [tracksLoading, setTracksLoading] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<AudiusTrack | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [existingVaultIds, setExistingVaultIds] = useState<Set<string>>(new Set());
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [capInput, setCapInput] = useState("10000");
 
@@ -61,8 +62,15 @@ export default function ArtistRegisterPage() {
     if (!audiusUser) return;
     setTracksLoading(true);
     try {
-      const result = await getUserTracks(audiusUser.userId);
+      const [result, vaultRes] = await Promise.all([
+        getUserTracks(audiusUser.userId),
+        fetch(`${BACKEND_URL}/api/db/vaults/artist/${audiusUser.userId}`),
+      ]);
       setTracks(result);
+      if (vaultRes.ok) {
+        const vaults: { track_id: string }[] = await vaultRes.json();
+        setExistingVaultIds(new Set(vaults.map((v) => v.track_id)));
+      }
     } catch {
       toast.error("Failed to load your tracks");
     } finally {
@@ -81,6 +89,11 @@ export default function ArtistRegisterPage() {
 
   const handleTrackSelectAndNext = async () => {
     if (!selectedTrack || !audiusUser) return;
+
+    if (existingVaultIds.has(selectedTrack.id)) {
+      toast.error("A vault already exists for this track. Select a different track.");
+      return;
+    }
 
     setVerifying(true);
     try {
@@ -118,7 +131,14 @@ export default function ArtistRegisterPage() {
 
     try {
       const capLamports = Math.floor(cap * 10 ** USDC_DECIMALS);
-      await initVault.mutateAsync(capLamports);
+      const intervalMap: Record<string, number> = { monthly: 0, quarterly: 1, milestone: 2 };
+      await initVault.mutateAsync({
+        cap: capLamports,
+        royaltyPct,
+        distributionInterval: intervalMap[distributionInterval] ?? 0,
+        vaultDurationMonths: vaultDurationMonths ?? 0,
+        pledgeNote,
+      });
 
       // Register artist + vault in DB (fire sequentially, non-blocking on failure)
       try {
@@ -318,12 +338,17 @@ export default function ArtistRegisterPage() {
                   No tracks found on your Audius account
                 </p>
               ) : (
-                tracks.map((track) => (
+                tracks.map((track) => {
+                  const hasVault = existingVaultIds.has(track.id);
+                  return (
                   <button
                     key={track.id}
-                    onClick={() => setSelectedTrack(track)}
+                    onClick={() => !hasVault && setSelectedTrack(track)}
+                    disabled={hasVault}
                     className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
-                      selectedTrack?.id === track.id
+                      hasVault
+                        ? "cursor-not-allowed border-base-200 opacity-50"
+                        : selectedTrack?.id === track.id
                         ? "border-accent-purple bg-accent-purple/10"
                         : "border-base-200 hover:border-accent-purple/30"
                     }`}
@@ -345,11 +370,16 @@ export default function ArtistRegisterPage() {
                         )}
                       </p>
                     </div>
-                    {selectedTrack?.id === track.id && (
+                    {hasVault ? (
+                      <span className="flex-shrink-0 rounded-md bg-accent-cyan/15 px-2 py-0.5 text-[10px] font-semibold text-accent-cyan">
+                        Vault exists
+                      </span>
+                    ) : selectedTrack?.id === track.id ? (
                       <CheckCircle className="h-5 w-5 flex-shrink-0 text-accent-purple" />
-                    )}
+                    ) : null}
                   </button>
-                ))
+                  );
+                })
               )}
             </div>
             <div className="mt-6 flex justify-between">

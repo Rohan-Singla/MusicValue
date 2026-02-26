@@ -57,13 +57,15 @@ pub fn handler(ctx: Context<DistributeYield>, amount: u64) -> Result<()> {
     // This makes each share worth more USDC on withdrawal
     let vault = &mut ctx.accounts.vault;
     vault.total_deposited = vault.total_deposited.checked_add(amount).unwrap();
+    vault.total_yield_distributed = vault.total_yield_distributed.checked_add(amount).unwrap();
 
     msg!(
-        "Distributed {} USDC yield to vault. New total: {}. Share price: {}/{}",
+        "Distributed {} USDC yield to vault. New total: {}. Share price: {}/{}. Total yield ever: {}",
         amount,
         vault.total_deposited,
         vault.total_deposited,
-        vault.total_shares
+        vault.total_shares,
+        vault.total_yield_distributed
     );
     Ok(())
 }

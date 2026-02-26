@@ -53,9 +53,16 @@ pub fn handler(
     ctx: Context<InitializeVault>,
     audius_track_id: String,
     cap: u64,
+    royalty_pct: u8,
+    distribution_interval: u8,
+    vault_duration_months: u16,
+    pledge_note: String,
 ) -> Result<()> {
     require!(audius_track_id.len() <= 32, MusicValueError::TrackIdTooLong);
     require!(cap > 0, MusicValueError::InvalidCap);
+    require!(royalty_pct <= 100, MusicValueError::InvalidRoyaltyPct);
+    require!(distribution_interval <= 2, MusicValueError::InvalidDistributionInterval);
+    require!(pledge_note.len() <= 200, MusicValueError::PledgeNoteTooLong);
 
     let vault = &mut ctx.accounts.vault;
     vault.authority = ctx.accounts.authority.key();
@@ -66,9 +73,20 @@ pub fn handler(
     vault.total_deposited = 0;
     vault.cap = cap;
     vault.total_shares = 0;
+    vault.total_yield_distributed = 0;
     vault.created_at = Clock::get()?.unix_timestamp;
     vault.bump = ctx.bumps.vault;
+    vault.royalty_pct = royalty_pct;
+    vault.distribution_interval = distribution_interval;
+    vault.vault_duration_months = vault_duration_months;
+    vault.pledge_note = pledge_note;
 
-    msg!("Vault initialized for track: {}", vault.audius_track_id);
+    msg!(
+        "Vault initialized for track: {} | pledge: {}% royalties, interval={}, duration={}mo",
+        vault.audius_track_id,
+        royalty_pct,
+        distribution_interval,
+        vault_duration_months
+    );
     Ok(())
 }
