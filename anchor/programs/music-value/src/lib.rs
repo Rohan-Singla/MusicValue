@@ -6,7 +6,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("4Axew2EExar585doSH8vpaFyT8Nu4wJ9xexN1WvgTZir");
+declare_id!("Atf26b8XuQ49cmvfTsvU5PjZ56zhoCvFiGQ7bBW2zoio");
 
 #[program]
 pub mod music_value {

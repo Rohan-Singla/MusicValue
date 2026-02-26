@@ -10,7 +10,7 @@ export const AUDIUS_API_BASE =
 export const AUDIUS_API_KEY = process.env.AUDIUS_API_KEY || "";
 
 export const PROGRAM_ID_STR =
-  process.env.PROGRAM_ID || "4Axew2EExar585doSH8vpaFyT8Nu4wJ9xexN1WvgTZir";
+  process.env.PROGRAM_ID || "Atf26b8XuQ49cmvfTsvU5PjZ56zhoCvFiGQ7bBW2zoio";
 export const USDC_MINT_STR =
   process.env.USDC_MINT || "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
 export const USDC_DECIMALS = parseInt(process.env.USDC_DECIMALS || "6", 10);

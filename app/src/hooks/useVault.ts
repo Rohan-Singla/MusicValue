@@ -11,7 +11,7 @@ import {
   getAccount,
 } from "@solana/spl-token";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
-import { PROGRAM_ID_STR, USDC_MINT_STR, BACKEND_URL } from "@/lib/constants";
+import { PROGRAM_ID_STR, USDC_MINT_STR } from "@/lib/constants";
 import { getTrack, AudiusTrack } from "@/services/audius";
 
 import idl from "@/lib/idl.json";
@@ -251,19 +251,7 @@ export function useDeposit(trackId: string) {
 
       return await builder.rpc();
     },
-    onSuccess: (txSignature, amountUsdc) => {
-      // Record deposit in DB (fire-and-forget — on-chain is source of truth)
-      fetch(`${BACKEND_URL}/api/db/deposits`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tx_signature: txSignature,
-          track_id: trackId,
-          backer_wallet: publicKey?.toBase58(),
-          amount_usdc: amountUsdc,
-        }),
-      }).catch((e) => console.error("Deposit DB record failed:", e));
-
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vault", trackId] });
       queryClient.invalidateQueries({ queryKey: ["position", trackId] });
     },

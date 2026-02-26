@@ -34,9 +34,6 @@ USDC_MINT=4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU
 USDC_DECIMALS=6
 
 APP_URL=http://localhost:3001
-
-SUPABASE_URL=https://<project>.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=<service_role_key>
 ```
 
 ---
@@ -79,12 +76,3 @@ The server starts on `http://localhost:3001`.
 | GET | `/api/actions/back-track` | Returns Blink metadata for backing a track |
 | POST | `/api/actions/back-track` | Builds and returns an unsigned deposit transaction |
 
-### Database
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/db/artists` | Upsert artist record |
-| GET | `/api/db/artists/:wallet` | Fetch artist by wallet |
-| POST | `/api/db/vaults` | Upsert vault record |
-| GET | `/api/db/vaults/:trackId` | Fetch vault by Audius track ID |
-| POST | `/api/db/deposits` | Record a deposit |
-| GET | `/api/db/deposits/:wallet` | Fetch deposits by wallet |

@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-music_value = "4Axew2EExar585doSH8vpaFyT8Nu4wJ9xexN1WvgTZir"
+music_value = "Atf26b8XuQ49cmvfTsvU5PjZ56zhoCvFiGQ7bBW2zoio"
 
 [registry]
 url = "https://api.apr.dev"

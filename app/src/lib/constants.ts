@@ -1,5 +1,5 @@
 // Program - exported as strings to avoid PublicKey prototype loss across module boundaries
-export const PROGRAM_ID_STR = "4Axew2EExar585doSH8vpaFyT8Nu4wJ9xexN1WvgTZir";
+export const PROGRAM_ID_STR = "Atf26b8XuQ49cmvfTsvU5PjZ56zhoCvFiGQ7bBW2zoio";
 
 // Backend URL — all sensitive RPC/API calls go through here
 export const BACKEND_URL =

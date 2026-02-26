@@ -1,5 +1,5 @@
 {
-  "address": "4Axew2EExar585doSH8vpaFyT8Nu4wJ9xexN1WvgTZir",
+  "address": "Atf26b8XuQ49cmvfTsvU5PjZ56zhoCvFiGQ7bBW2zoio",
   "metadata": {
     "name": "music_value",
     "version": "0.1.0",
@@ -9,9 +9,6 @@
   "instructions": [
     {
       "name": "deposit",
-      "docs": [
-        "Deposit USDC into a track vault and receive share tokens"
-      ],
       "discriminator": [
         242,
         35,
@@ -53,9 +50,6 @@
         },
         {
           "name": "user_position",
-          "docs": [
-            "User's position in this vault (created on first deposit)"
-          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -85,30 +79,18 @@
         },
         {
           "name": "user_usdc",
-          "docs": [
-            "User's USDC token account (source of deposit)"
-          ],
           "writable": true
         },
         {
           "name": "vault_token_account",
-          "docs": [
-            "Vault's USDC token account (destination of deposit)"
-          ],
           "writable": true
         },
         {
           "name": "share_mint",
-          "docs": [
-            "Share token mint"
-          ],
           "writable": true
         },
         {
           "name": "user_shares",
-          "docs": [
-            "User's share token account (receives minted shares)"
-          ],
           "writable": true
         },
         {
@@ -129,11 +111,6 @@
     },
     {
       "name": "distribute_yield",
-      "docs": [
-        "Distribute yield into the vault (authority only).",
-        "Increases total_deposited without minting new shares,",
-        "making each existing share worth more USDC."
-      ],
       "discriminator": [
         233,
         92,
@@ -147,9 +124,6 @@
       "accounts": [
         {
           "name": "authority",
-          "docs": [
-            "The vault authority who distributes yield"
-          ],
           "writable": true,
           "signer": true
         },
@@ -178,16 +152,10 @@
         },
         {
           "name": "authority_usdc",
-          "docs": [
-            "Authority's USDC token account (source of yield)"
-          ],
           "writable": true
         },
         {
           "name": "vault_token_account",
-          "docs": [
-            "Vault's USDC token account (receives yield)"
-          ],
           "writable": true
         },
         {
@@ -204,9 +172,6 @@
     },
     {
       "name": "initialize_vault",
-      "docs": [
-        "Initialize a new vault for an Audius track with a royalty pledge"
-      ],
       "discriminator": [
         48,
         191,
@@ -246,16 +211,10 @@
           }
         },
         {
-          "name": "usdc_mint",
-          "docs": [
-            "The USDC mint"
-          ]
+          "name": "usdc_mint"
         },
         {
           "name": "vault_token_account",
-          "docs": [
-            "The vault's USDC token account to hold deposits"
-          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -284,9 +243,6 @@
         },
         {
           "name": "share_mint",
-          "docs": [
-            "The share token mint (1 share = 1 unit of participation)"
-          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -354,10 +310,6 @@
     },
     {
       "name": "update_pledge",
-      "docs": [
-        "Update the royalty pledge fields on an existing vault (authority only).",
-        "Useful when an artist wants to revise their commitment to backers."
-      ],
       "discriminator": [
         45,
         167,
@@ -371,9 +323,6 @@
       "accounts": [
         {
           "name": "authority",
-          "docs": [
-            "The vault authority (artist)"
-          ],
           "writable": true,
           "signer": true
         },
@@ -422,9 +371,6 @@
     },
     {
       "name": "withdraw",
-      "docs": [
-        "Withdraw from a track vault by burning share tokens"
-      ],
       "discriminator": [
         183,
         18,
@@ -495,30 +441,18 @@
         },
         {
           "name": "vault_token_account",
-          "docs": [
-            "Vault's USDC token account (source of withdrawal)"
-          ],
           "writable": true
         },
         {
           "name": "user_usdc",
-          "docs": [
-            "User's USDC token account (destination of withdrawal)"
-          ],
           "writable": true
         },
         {
           "name": "share_mint",
-          "docs": [
-            "Share token mint"
-          ],
           "writable": true
         },
         {
           "name": "user_shares",
-          "docs": [
-            "User's share token account (shares to burn)"
-          ],
           "writable": true
         },
         {
@@ -627,108 +561,62 @@
         "fields": [
           {
             "name": "authority",
-            "docs": [
-              "The authority who created this vault"
-            ],
             "type": "pubkey"
           },
           {
             "name": "audius_track_id",
-            "docs": [
-              "Audius track ID (max 32 chars)"
-            ],
             "type": "string"
           },
           {
             "name": "usdc_mint",
-            "docs": [
-              "USDC mint address"
-            ],
             "type": "pubkey"
           },
           {
             "name": "vault_token_account",
-            "docs": [
-              "Vault's USDC token account (holds deposited funds)"
-            ],
             "type": "pubkey"
           },
           {
             "name": "share_mint",
-            "docs": [
-              "Share token mint (fungible token representing vault participation)"
-            ],
             "type": "pubkey"
           },
           {
             "name": "total_deposited",
-            "docs": [
-              "Total USDC deposited in the vault (principal + distributed yield)"
-            ],
             "type": "u64"
           },
           {
             "name": "cap",
-            "docs": [
-              "Maximum USDC that can be deposited (funding cap)"
-            ],
             "type": "u64"
           },
           {
             "name": "total_shares",
-            "docs": [
-              "Total share tokens minted (equals total principal; never changes on yield)"
-            ],
             "type": "u64"
           },
           {
             "name": "created_at",
-            "docs": [
-              "Vault creation timestamp"
-            ],
             "type": "i64"
           },
           {
             "name": "bump",
-            "docs": [
-              "PDA bump seed"
-            ],
             "type": "u8"
           },
           {
             "name": "royalty_pct",
-            "docs": [
-              "Percentage of royalties pledged to backers (0-100)"
-            ],
             "type": "u8"
           },
           {
             "name": "distribution_interval",
-            "docs": [
-              "Distribution interval: 0 = monthly, 1 = quarterly, 2 = milestone"
-            ],
             "type": "u8"
           },
           {
             "name": "vault_duration_months",
-            "docs": [
-              "Vault duration in months (0 = ongoing / no end date)"
-            ],
             "type": "u16"
           },
           {
             "name": "pledge_note",
-            "docs": [
-              "Artist's public pledge note to backers (max 200 chars)"
-            ],
             "type": "string"
           },
           {
             "name": "total_yield_distributed",
-            "docs": [
-              "Cumulative USDC yield distributed by artist into vault",
-              "(appended last to preserve layout of pre-existing accounts)"
-            ],
             "type": "u64"
           }
         ]
@@ -741,44 +629,26 @@
         "fields": [
           {
             "name": "owner",
-            "docs": [
-              "The user who owns this position"
-            ],
             "type": "pubkey"
           },
           {
             "name": "vault",
-            "docs": [
-              "The vault this position belongs to"
-            ],
             "type": "pubkey"
           },
           {
             "name": "shares_held",
-            "docs": [
-              "Number of share tokens held"
-            ],
             "type": "u64"
           },
           {
             "name": "total_deposited",
-            "docs": [
-              "Total USDC deposited by this user"
-            ],
             "type": "u64"
           },
           {
             "name": "deposited_at",
-            "docs": [
-              "Timestamp of first deposit"
-            ],
             "type": "i64"
           },
           {
             "name": "bump",
-            "docs": [
-              "PDA bump seed"
-            ],
             "type": "u8"
           }
         ]

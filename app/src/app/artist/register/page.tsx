@@ -43,7 +43,6 @@ export default function ArtistRegisterPage() {
   const [tracksLoading, setTracksLoading] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<AudiusTrack | null>(null);
   const [verifying, setVerifying] = useState(false);
-  const [existingVaultIds, setExistingVaultIds] = useState<Set<string>>(new Set());
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [capInput, setCapInput] = useState("10000");
 
@@ -62,15 +61,8 @@ export default function ArtistRegisterPage() {
     if (!audiusUser) return;
     setTracksLoading(true);
     try {
-      const [result, vaultRes] = await Promise.all([
-        getUserTracks(audiusUser.userId),
-        fetch(`${BACKEND_URL}/api/db/vaults/artist/${audiusUser.userId}`),
-      ]);
+      const result = await getUserTracks(audiusUser.userId);
       setTracks(result);
-      if (vaultRes.ok) {
-        const vaults: { track_id: string }[] = await vaultRes.json();
-        setExistingVaultIds(new Set(vaults.map((v) => v.track_id)));
-      }
     } catch {
       toast.error("Failed to load your tracks");
     } finally {
@@ -89,11 +81,6 @@ export default function ArtistRegisterPage() {
 
   const handleTrackSelectAndNext = async () => {
     if (!selectedTrack || !audiusUser) return;
-
-    if (existingVaultIds.has(selectedTrack.id)) {
-      toast.error("A vault already exists for this track. Select a different track.");
-      return;
-    }
 
     setVerifying(true);
     try {
@@ -139,47 +126,6 @@ export default function ArtistRegisterPage() {
         vaultDurationMonths: vaultDurationMonths ?? 0,
         pledgeNote,
       });
-
-      // Register artist + vault in DB (non-blocking — vault is already live on-chain)
-      try {
-        const artistRes = await fetch(`${BACKEND_URL}/api/db/artists`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            audius_user_id: audiusUser.userId,
-            audius_handle: audiusUser.handle,
-            audius_name: audiusUser.name,
-            solana_wallet: publicKey.toBase58(),
-            terms_accepted: true,
-          }),
-        });
-        if (!artistRes.ok) {
-          const e = await artistRes.json().catch(() => ({}));
-          console.error("Artist DB write failed:", artistRes.status, e);
-        }
-
-        const vaultRes = await fetch(`${BACKEND_URL}/api/db/vaults`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            track_id: trackId,
-            track_title: selectedTrack.title,
-            audius_user_id: audiusUser.userId,
-            artist_wallet: publicKey.toBase58(),
-            cap: capLamports,
-            royalty_pct: royaltyPct,
-            distribution_interval: distributionInterval,
-            vault_duration_months: vaultDurationMonths,
-            pledge_note: pledgeNote || null,
-          }),
-        });
-        if (!vaultRes.ok) {
-          const e = await vaultRes.json().catch(() => ({}));
-          console.error("Vault DB write failed:", vaultRes.status, e);
-        }
-      } catch (dbErr) {
-        console.error("DB registration error (vault still live on-chain):", dbErr);
-      }
 
       toast.success("Vault created successfully!");
       router.push("/artist");
@@ -347,17 +293,12 @@ export default function ArtistRegisterPage() {
                   No tracks found on your Audius account
                 </p>
               ) : (
-                tracks.map((track) => {
-                  const hasVault = existingVaultIds.has(track.id);
-                  return (
+                tracks.map((track) => (
                   <button
                     key={track.id}
-                    onClick={() => !hasVault && setSelectedTrack(track)}
-                    disabled={hasVault}
+                    onClick={() => setSelectedTrack(track)}
                     className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
-                      hasVault
-                        ? "cursor-not-allowed border-base-200 opacity-50"
-                        : selectedTrack?.id === track.id
+                      selectedTrack?.id === track.id
                         ? "border-accent-purple bg-accent-purple/10"
                         : "border-base-200 hover:border-accent-purple/30"
                     }`}
@@ -379,16 +320,11 @@ export default function ArtistRegisterPage() {
                         )}
                       </p>
                     </div>
-                    {hasVault ? (
-                      <span className="flex-shrink-0 rounded-md bg-accent-cyan/15 px-2 py-0.5 text-[10px] font-semibold text-accent-cyan">
-                        Vault exists
-                      </span>
-                    ) : selectedTrack?.id === track.id ? (
+                    {selectedTrack?.id === track.id && (
                       <CheckCircle className="h-5 w-5 flex-shrink-0 text-accent-purple" />
-                    ) : null}
+                    )}
                   </button>
-                  );
-                })
+                ))
               )}
             </div>
             <div className="mt-6 flex justify-between">
@@ -401,7 +337,7 @@ export default function ArtistRegisterPage() {
               </button>
               <button
                 onClick={handleTrackSelectAndNext}
-                disabled={!selectedTrack || verifying || (selectedTrack?.id.length ?? 0) > 32}
+                disabled={!selectedTrack || verifying || (selectedTrack?.id?.length ?? 0) > 32}
                 className="btn-primary flex items-center gap-2 text-sm"
               >
                 {verifying ? (
