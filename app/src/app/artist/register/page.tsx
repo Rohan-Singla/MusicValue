@@ -46,6 +46,12 @@ export default function ArtistRegisterPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [capInput, setCapInput] = useState("10000");
 
+  // Royalty pledge state
+  const [royaltyPct, setRoyaltyPct] = useState<number>(30);
+  const [distributionInterval, setDistributionInterval] = useState<"monthly" | "quarterly" | "milestone">("monthly");
+  const [vaultDurationMonths, setVaultDurationMonths] = useState<number | null>(12);
+  const [pledgeNote, setPledgeNote] = useState("");
+
   const initVault = useInitializeVault(selectedTrack?.id ?? "");
 
   const goNext = () => setStep((s) => (Math.min(s + 1, 5) as Step));
@@ -136,6 +142,10 @@ export default function ArtistRegisterPage() {
             audius_user_id: audiusUser.userId,
             artist_wallet: publicKey.toBase58(),
             cap: capLamports,
+            royalty_pct: royaltyPct,
+            distribution_interval: distributionInterval,
+            vault_duration_months: vaultDurationMonths,
+            pledge_note: pledgeNote || null,
           }),
         });
       } catch (dbErr) {
@@ -485,6 +495,101 @@ export default function ArtistRegisterPage() {
               <p className="mt-1 text-xs text-slate-500">
                 Maximum total USDC fans can deposit into your vault
               </p>
+            </div>
+
+            {/* Royalty pledge */}
+            <div className="mt-6 rounded-xl border border-accent-purple/20 bg-accent-purple/5 p-4 space-y-4">
+              <div>
+                <p className="text-sm font-semibold text-white">Public Royalty Pledge</p>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  This is shown publicly to backers before they invest. It's your commitment — be honest.
+                </p>
+              </div>
+
+              {/* Royalty % */}
+              <div>
+                <label className="mb-2 block text-xs font-medium text-slate-300">
+                  % of royalties you pledge to distribute
+                </label>
+                <div className="flex gap-2">
+                  {[10, 20, 30, 50].map((pct) => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => setRoyaltyPct(pct)}
+                      className={`flex-1 rounded-lg border py-2 text-sm font-medium transition-colors ${
+                        royaltyPct === pct
+                          ? "border-accent-purple bg-accent-purple/20 text-accent-purple"
+                          : "border-base-200 text-slate-400 hover:border-accent-purple/40"
+                      }`}
+                    >
+                      {pct}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Distribution interval */}
+              <div>
+                <label className="mb-2 block text-xs font-medium text-slate-300">
+                  How often will you distribute?
+                </label>
+                <div className="flex gap-2">
+                  {(["monthly", "quarterly", "milestone"] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setDistributionInterval(v)}
+                      className={`flex-1 rounded-lg border py-2 text-xs font-medium capitalize transition-colors ${
+                        distributionInterval === v
+                          ? "border-accent-purple bg-accent-purple/20 text-accent-purple"
+                          : "border-base-200 text-slate-400 hover:border-accent-purple/40"
+                      }`}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Duration */}
+              <div>
+                <label className="mb-2 block text-xs font-medium text-slate-300">
+                  Vault duration
+                </label>
+                <div className="flex gap-2">
+                  {[{ label: "6 mo", value: 6 }, { label: "12 mo", value: 12 }, { label: "24 mo", value: 24 }, { label: "Ongoing", value: null }].map((opt) => (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() => setVaultDurationMonths(opt.value)}
+                      className={`flex-1 rounded-lg border py-2 text-xs font-medium transition-colors ${
+                        vaultDurationMonths === opt.value
+                          ? "border-accent-purple bg-accent-purple/20 text-accent-purple"
+                          : "border-base-200 text-slate-400 hover:border-accent-purple/40"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pledge note */}
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-300">
+                  Message to backers <span className="text-slate-500">(optional)</span>
+                </label>
+                <textarea
+                  value={pledgeNote}
+                  onChange={(e) => setPledgeNote(e.target.value)}
+                  placeholder="e.g. I'll distribute 30% of my Audius streaming royalties every month for 12 months..."
+                  rows={2}
+                  maxLength={280}
+                  className="w-full resize-none rounded-xl border border-base-200 bg-base-50 px-4 py-2.5 text-sm text-white outline-none transition-colors focus:border-accent-purple/50 placeholder:text-slate-600"
+                />
+                <p className="mt-1 text-right text-[10px] text-slate-500">{pledgeNote.length}/280</p>
+              </div>
             </div>
 
             {!publicKey && (

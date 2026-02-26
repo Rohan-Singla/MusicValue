@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Mic2,
   Music,
+  Lock,
 } from "lucide-react";
 
 // ─── helpers ───────────────────────────────────────────────────────────────
@@ -84,12 +85,23 @@ function RaisingCard({ item }: { item: VaultedTrack }) {
           {/* Progress pill overlay at bottom of image */}
           <div className="absolute bottom-0 left-0 right-0 px-3 pb-2">
             <div className="mb-1 flex items-center justify-between text-[10px]">
-              <span className="font-semibold text-white">{raised} raised</span>
+              {progress >= 100 ? (
+                <span className="flex items-center gap-1 font-semibold text-yellow-400">
+                  <Lock className="h-2.5 w-2.5" />
+                  Vault Full
+                </span>
+              ) : (
+                <span className="font-semibold text-white">{raised} raised</span>
+              )}
               <span className="text-slate-400">cap {cap}</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-accent-purple to-accent-cyan transition-all"
+                className={`h-full rounded-full transition-all ${
+                  progress >= 100
+                    ? "bg-yellow-400"
+                    : "bg-gradient-to-r from-accent-purple to-accent-cyan"
+                }`}
                 style={{ width: `${progress}%` }}
               />
             </div>

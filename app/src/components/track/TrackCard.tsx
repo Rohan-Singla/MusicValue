@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Play, Users, Heart } from "lucide-react";
+import { Play, Users, Heart, Lock } from "lucide-react";
 import type { AudiusTrack } from "@/services/audius";
 
 interface TrackCardProps {
@@ -81,12 +81,19 @@ export function TrackCard({ track, vaultStats }: TrackCardProps) {
           {vaultStats ? (
             <div className="mt-3">
               <div className="flex items-center justify-between text-[10px] text-slate-500">
-                <span>{formatUSDC(vaultStats.totalDeposited)} backed</span>
+                {progress >= 100 ? (
+                  <span className="flex items-center gap-1 font-medium text-yellow-400">
+                    <Lock className="h-2.5 w-2.5" />
+                    Vault Full
+                  </span>
+                ) : (
+                  <span>{formatUSDC(vaultStats.totalDeposited)} backed</span>
+                )}
                 <span>{formatUSDC(vaultStats.cap)} cap</span>
               </div>
               <div className="vault-progress mt-1 h-1.5">
                 <div
-                  className="vault-progress-bar"
+                  className={`vault-progress-bar ${progress >= 100 ? "!bg-yellow-400" : ""}`}
                   style={{ width: `${progress}%` }}
                 />
               </div>

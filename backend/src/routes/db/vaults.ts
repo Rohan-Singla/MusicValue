@@ -15,14 +15,20 @@ function deriveVaultAddress(trackId: string): string {
 
 // POST /api/db/vaults — register a vault after on-chain creation
 router.post("/", async (req: Request, res: Response) => {
-  const { track_id, track_title, audius_user_id, artist_wallet, cap } =
-    req.body as {
-      track_id?: string;
-      track_title?: string;
-      audius_user_id?: string;
-      artist_wallet?: string;
-      cap?: number;
-    };
+  const {
+    track_id, track_title, audius_user_id, artist_wallet, cap,
+    royalty_pct, distribution_interval, vault_duration_months, pledge_note,
+  } = req.body as {
+    track_id?: string;
+    track_title?: string;
+    audius_user_id?: string;
+    artist_wallet?: string;
+    cap?: number;
+    royalty_pct?: number;
+    distribution_interval?: string;
+    vault_duration_months?: number | null;
+    pledge_note?: string;
+  };
 
   if (!track_id || !track_title || !audius_user_id || !artist_wallet || cap == null) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -38,7 +44,10 @@ router.post("/", async (req: Request, res: Response) => {
   const { data, error } = await supabase
     .from("vaults")
     .upsert(
-      { track_id, track_title, vault_address, audius_user_id, artist_wallet, cap },
+      {
+        track_id, track_title, vault_address, audius_user_id, artist_wallet, cap,
+        royalty_pct, distribution_interval, vault_duration_months, pledge_note,
+      },
       { onConflict: "track_id" }
     )
     .select()
