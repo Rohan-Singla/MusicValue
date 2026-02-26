@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useVaultedTracks, VaultedTrack } from "@/hooks/useVault";
 import { USDC_DECIMALS } from "@/lib/constants";
 import {
-  TrendingUp,
   Users,
   Zap,
   ArrowRight,
   Mic2,
   Music,
   Lock,
+  BadgePercent,
 } from "lucide-react";
 
 // ─── helpers ───────────────────────────────────────────────────────────────
@@ -69,17 +69,19 @@ function RaisingCard({ item }: { item: VaultedTrack }) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-base/90 via-base/20 to-transparent" />
 
-          {/* Genre + APY badges */}
+          {/* Genre + royalty pledge badges */}
           <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
             {track.genre && (
               <span className="rounded-md bg-black/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-purple backdrop-blur-sm">
                 {track.genre}
               </span>
             )}
-            <span className="flex items-center gap-0.5 rounded-md bg-accent-cyan/20 px-2 py-0.5 text-[10px] font-semibold text-accent-cyan backdrop-blur-sm">
-              <TrendingUp className="h-2.5 w-2.5" />
-              5.2% APY
-            </span>
+            {vault.royaltyPct > 0 && (
+              <span className="flex items-center gap-0.5 rounded-md bg-accent-cyan/20 px-2 py-0.5 text-[10px] font-semibold text-accent-cyan backdrop-blur-sm">
+                <BadgePercent className="h-2.5 w-2.5" />
+                {vault.royaltyPct}% royalties
+              </span>
+            )}
           </div>
 
           {/* Progress pill overlay at bottom of image */}

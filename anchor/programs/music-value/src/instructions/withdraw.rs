@@ -24,14 +24,12 @@ pub struct Withdraw<'info> {
     )]
     pub user_position: Account<'info, UserPosition>,
 
-    /// Vault's USDC token account (source of withdrawal)
     #[account(
         mut,
         constraint = vault_token_account.key() == vault.vault_token_account
     )]
     pub vault_token_account: Account<'info, TokenAccount>,
 
-    /// User's USDC token account (destination of withdrawal)
     #[account(
         mut,
         constraint = user_usdc.mint == vault.usdc_mint,
@@ -39,14 +37,12 @@ pub struct Withdraw<'info> {
     )]
     pub user_usdc: Account<'info, TokenAccount>,
 
-    /// Share token mint
     #[account(
         mut,
         constraint = share_mint.key() == vault.share_mint
     )]
     pub share_mint: Account<'info, Mint>,
 
-    /// User's share token account (shares to burn)
     #[account(
         mut,
         constraint = user_shares.mint == share_mint.key(),
@@ -66,16 +62,13 @@ pub fn handler(ctx: Context<Withdraw>, shares: u64) -> Result<()> {
 
     let vault = &ctx.accounts.vault;
 
-    // Calculate USDC to return (proportional to shares)
     // usdc_amount = shares * total_deposited / total_shares
-    // This means if yield was distributed (total_deposited grew), each share is worth more
     let usdc_amount = (shares as u128)
         .checked_mul(vault.total_deposited as u128)
         .unwrap()
         .checked_div(vault.total_shares as u128)
         .unwrap() as u64;
 
-    // Transfer USDC from vault to user
     let track_id = vault.audius_track_id.as_bytes();
     let bump = vault.bump;
     let seeds: &[&[u8]] = &[b"vault", track_id, &[bump]];
@@ -94,7 +87,6 @@ pub fn handler(ctx: Context<Withdraw>, shares: u64) -> Result<()> {
         usdc_amount,
     )?;
 
-    // Burn share tokens
     token::burn(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
@@ -107,12 +99,10 @@ pub fn handler(ctx: Context<Withdraw>, shares: u64) -> Result<()> {
         shares,
     )?;
 
-    // Update vault state
     let vault = &mut ctx.accounts.vault;
     vault.total_deposited = vault.total_deposited.checked_sub(usdc_amount).unwrap();
     vault.total_shares = vault.total_shares.checked_sub(shares).unwrap();
 
-    // Update user position
     let position = &mut ctx.accounts.user_position;
     position.shares_held = position.shares_held.checked_sub(shares).unwrap();
 

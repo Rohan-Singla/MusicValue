@@ -102,6 +102,11 @@ export function useVault(trackId: string | undefined) {
           totalShares: (vault.totalShares as BN).toNumber(),
           authority: vault.authority as PublicKey,
           shareMint: vault.shareMint as PublicKey,
+          royaltyPct: (vault.royaltyPct as number) ?? 0,
+          distributionInterval: (vault.distributionInterval as number) ?? 0,
+          vaultDurationMonths: (vault.vaultDurationMonths as number) ?? 0,
+          pledgeNote: (vault.pledgeNote as string) ?? "",
+          totalYieldDistributed: (vault.totalYieldDistributed as BN).toNumber(),
         };
       } catch {
         return null;
@@ -324,6 +329,13 @@ export interface VaultInfo {
   cap: number;
   totalShares: number;
   authority: PublicKey;
+  shareMint: PublicKey;
+  // Royalty pledge fields
+  royaltyPct: number;
+  distributionInterval: number; // 0=monthly, 1=quarterly, 2=milestone
+  vaultDurationMonths: number;  // 0 = ongoing
+  pledgeNote: string;
+  totalYieldDistributed: number;
 }
 
 export interface VaultedTrack {
@@ -347,6 +359,12 @@ export function useAllVaults() {
         cap: (a.account.cap as BN).toNumber(),
         totalShares: (a.account.totalShares as BN).toNumber(),
         authority: a.account.authority as PublicKey,
+        shareMint: a.account.shareMint as PublicKey,
+        royaltyPct: (a.account.royaltyPct as number) ?? 0,
+        distributionInterval: (a.account.distributionInterval as number) ?? 0,
+        vaultDurationMonths: (a.account.vaultDurationMonths as number) ?? 0,
+        pledgeNote: (a.account.pledgeNote as string) ?? "",
+        totalYieldDistributed: (a.account.totalYieldDistributed as BN).toNumber(),
       }));
     },
     enabled: !!program,

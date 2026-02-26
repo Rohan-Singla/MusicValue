@@ -15,19 +15,10 @@ const app = express();
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// Health check
 app.get("/health", (_, res) => res.json({ ok: true }));
-
-// Solana RPC proxy
 app.use("/rpc", rpcRouter);
-
-// Audius
 app.use("/api/audius/verify-track", verifyTrackRouter);
-
-// Solana Actions (Blinks)
 app.use("/api/actions/back-track", backTrackRouter);
-
-// Database
 app.use("/api/db/artists", artistsRouter);
 app.use("/api/db/vaults", vaultsRouter);
 app.use("/api/db/deposits", depositsRouter);

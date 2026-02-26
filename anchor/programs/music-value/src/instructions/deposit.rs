@@ -16,7 +16,6 @@ pub struct Deposit<'info> {
     )]
     pub vault: Account<'info, TrackVault>,
 
-    /// User's position in this vault (created on first deposit)
     #[account(
         init_if_needed,
         payer = user,
@@ -26,7 +25,6 @@ pub struct Deposit<'info> {
     )]
     pub user_position: Account<'info, UserPosition>,
 
-    /// User's USDC token account (source of deposit)
     #[account(
         mut,
         constraint = user_usdc.mint == vault.usdc_mint,
@@ -34,21 +32,18 @@ pub struct Deposit<'info> {
     )]
     pub user_usdc: Account<'info, TokenAccount>,
 
-    /// Vault's USDC token account (destination of deposit)
     #[account(
         mut,
         constraint = vault_token_account.key() == vault.vault_token_account
     )]
     pub vault_token_account: Account<'info, TokenAccount>,
 
-    /// Share token mint
     #[account(
         mut,
         constraint = share_mint.key() == vault.share_mint
     )]
     pub share_mint: Account<'info, Mint>,
 
-    /// User's share token account (receives minted shares)
     #[account(
         mut,
         constraint = user_shares.mint == share_mint.key(),
@@ -69,7 +64,6 @@ pub fn handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         MusicValueError::VaultCapExceeded
     );
 
-    // Transfer USDC from user to vault
     token::transfer(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
@@ -82,7 +76,6 @@ pub fn handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         amount,
     )?;
 
-    // Mint share tokens to user (1:1 ratio with USDC for simplicity)
     let track_id = vault.audius_track_id.as_bytes();
     let bump = vault.bump;
     let seeds: &[&[u8]] = &[b"vault", track_id, &[bump]];
@@ -101,12 +94,10 @@ pub fn handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         amount,
     )?;
 
-    // Update vault state
     let vault = &mut ctx.accounts.vault;
     vault.total_deposited = vault.total_deposited.checked_add(amount).unwrap();
     vault.total_shares = vault.total_shares.checked_add(amount).unwrap();
 
-    // Update user position
     let position = &mut ctx.accounts.user_position;
     if position.deposited_at == 0 {
         position.owner = ctx.accounts.user.key();

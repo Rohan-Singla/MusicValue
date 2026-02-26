@@ -5,7 +5,6 @@ use crate::state::TrackVault;
 
 #[derive(Accounts)]
 pub struct UpdatePledge<'info> {
-    /// The vault authority (artist)
     #[account(mut)]
     pub authority: Signer<'info>,
 

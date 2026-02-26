@@ -19,10 +19,8 @@ pub struct InitializeVault<'info> {
     )]
     pub vault: Account<'info, TrackVault>,
 
-    /// The USDC mint
     pub usdc_mint: Account<'info, Mint>,
 
-    /// The vault's USDC token account to hold deposits
     #[account(
         init,
         payer = authority,
@@ -33,7 +31,6 @@ pub struct InitializeVault<'info> {
     )]
     pub vault_token_account: Account<'info, TokenAccount>,
 
-    /// The share token mint (1 share = 1 unit of participation)
     #[account(
         init,
         payer = authority,

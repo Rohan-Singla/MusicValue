@@ -3,8 +3,6 @@ import { SOLANA_RPC_URL } from "../lib/constants";
 
 const router = Router();
 
-// Proxy all Solana JSON-RPC calls to the real RPC endpoint.
-// This keeps the RPC URL (and any embedded API key) server-side only.
 router.post("/", async (req: Request, res: Response) => {
   try {
     const upstream = await fetch(SOLANA_RPC_URL, {

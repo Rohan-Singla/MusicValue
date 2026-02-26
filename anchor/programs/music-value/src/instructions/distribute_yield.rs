@@ -6,7 +6,6 @@ use crate::state::TrackVault;
 
 #[derive(Accounts)]
 pub struct DistributeYield<'info> {
-    /// The vault authority who distributes yield
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -18,7 +17,6 @@ pub struct DistributeYield<'info> {
     )]
     pub vault: Account<'info, TrackVault>,
 
-    /// Authority's USDC token account (source of yield)
     #[account(
         mut,
         constraint = authority_usdc.mint == vault.usdc_mint,
@@ -26,7 +24,6 @@ pub struct DistributeYield<'info> {
     )]
     pub authority_usdc: Account<'info, TokenAccount>,
 
-    /// Vault's USDC token account (receives yield)
     #[account(
         mut,
         constraint = vault_token_account.key() == vault.vault_token_account
@@ -40,7 +37,6 @@ pub fn handler(ctx: Context<DistributeYield>, amount: u64) -> Result<()> {
     require!(amount > 0, MusicValueError::ZeroDeposit);
     require!(ctx.accounts.vault.total_shares > 0, MusicValueError::NoShareholders);
 
-    // Transfer USDC from authority to vault (simulates yield from lending protocol)
     token::transfer(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
@@ -53,8 +49,6 @@ pub fn handler(ctx: Context<DistributeYield>, amount: u64) -> Result<()> {
         amount,
     )?;
 
-    // Increase total_deposited but NOT total_shares
-    // This makes each share worth more USDC on withdrawal
     let vault = &mut ctx.accounts.vault;
     vault.total_deposited = vault.total_deposited.checked_add(amount).unwrap();
     vault.total_yield_distributed = vault.total_yield_distributed.checked_add(amount).unwrap();

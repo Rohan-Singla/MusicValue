@@ -140,9 +140,9 @@ export default function ArtistRegisterPage() {
         pledgeNote,
       });
 
-      // Register artist + vault in DB (fire sequentially, non-blocking on failure)
+      // Register artist + vault in DB (non-blocking — vault is already live on-chain)
       try {
-        await fetch(`${BACKEND_URL}/api/db/artists`, {
+        const artistRes = await fetch(`${BACKEND_URL}/api/db/artists`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -153,7 +153,12 @@ export default function ArtistRegisterPage() {
             terms_accepted: true,
           }),
         });
-        await fetch(`${BACKEND_URL}/api/db/vaults`, {
+        if (!artistRes.ok) {
+          const e = await artistRes.json().catch(() => ({}));
+          console.error("Artist DB write failed:", artistRes.status, e);
+        }
+
+        const vaultRes = await fetch(`${BACKEND_URL}/api/db/vaults`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -168,8 +173,12 @@ export default function ArtistRegisterPage() {
             pledge_note: pledgeNote || null,
           }),
         });
+        if (!vaultRes.ok) {
+          const e = await vaultRes.json().catch(() => ({}));
+          console.error("Vault DB write failed:", vaultRes.status, e);
+        }
       } catch (dbErr) {
-        console.error("DB registration failed (vault still created on-chain):", dbErr);
+        console.error("DB registration error (vault still live on-chain):", dbErr);
       }
 
       toast.success("Vault created successfully!");
