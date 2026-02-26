@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, ReactNode, useMemo } from "react";
+import { FC, ReactNode, useMemo, useState, useEffect } from "react";
 import {
   ConnectionProvider,
   WalletProvider,
@@ -28,10 +28,15 @@ interface Props {
 }
 
 export const SolanaProvider: FC<Props> = ({ children }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const wallets = useMemo(
     () => [new PhantomWalletAdapter(), new SolflareWalletAdapter()],
     []
   );
+
+  if (!mounted) return <>{children}</>;
 
   return (
     <ConnectionProvider endpoint={SOLANA_RPC_URL} config={{ wsEndpoint: SOLANA_WS_URL }}>
