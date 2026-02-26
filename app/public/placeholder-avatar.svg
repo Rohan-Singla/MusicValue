@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1035"/>
+      <stop offset="100%" stop-color="#0f0f1a"/>
+    </linearGradient>
+    <linearGradient id="icon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <clipPath id="circle">
+      <circle cx="75" cy="75" r="75"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="75" cy="75" r="75" fill="url(#bg)"/>
+
+  <!-- Subtle border ring -->
+  <circle cx="75" cy="75" r="73" fill="none" stroke="url(#icon)" stroke-width="1" stroke-opacity="0.3"/>
+
+  <!-- Music note (centered) -->
+  <g clip-path="url(#circle)">
+    <!-- Note head -->
+    <ellipse cx="80" cy="86" rx="14" ry="10" fill="url(#icon)" opacity="0.85" transform="rotate(-20,80,86)"/>
+    <!-- Note stem -->
+    <rect x="91" y="42" width="5" height="46" rx="2.5" fill="url(#icon)" opacity="0.85"/>
+    <!-- Note flag -->
+    <path d="M96 42 Q118 52 106 68" stroke="url(#icon)" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.85"/>
+  </g>
+</svg>

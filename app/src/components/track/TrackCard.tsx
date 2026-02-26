@@ -36,6 +36,7 @@ export function TrackCard({ track, vaultStats }: TrackCardProps) {
             src={track.artwork?.["480x480"] || "/placeholder-track.svg"}
             alt={track.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-track.svg"; }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-base/80 via-transparent to-transparent" />
 

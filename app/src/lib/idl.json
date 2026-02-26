@@ -128,6 +128,81 @@
       ]
     },
     {
+      "name": "distribute_yield",
+      "docs": [
+        "Distribute yield into the vault (authority only)",
+        "Increases total_deposited without minting new shares,",
+        "making each existing share worth more USDC"
+      ],
+      "discriminator": [
+        233,
+        92,
+        186,
+        157,
+        235,
+        238,
+        212,
+        114
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The vault authority who distributes yield"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.audius_track_id",
+                "account": "TrackVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority_usdc",
+          "docs": [
+            "Authority's USDC token account (source of yield)"
+          ],
+          "writable": true
+        },
+        {
+          "name": "vault_token_account",
+          "docs": [
+            "Vault's USDC token account (receives yield)"
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "initialize_vault",
       "docs": [
         "Initialize a new vault for an Audius track"
@@ -433,6 +508,16 @@
       "code": 6005,
       "name": "InvalidCap",
       "msg": "Vault cap must be greater than zero"
+    },
+    {
+      "code": 6006,
+      "name": "Unauthorized",
+      "msg": "Only the vault authority can perform this action"
+    },
+    {
+      "code": 6007,
+      "name": "NoShareholders",
+      "msg": "Cannot distribute yield when there are no shareholders"
     }
   ],
   "types": [

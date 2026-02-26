@@ -45,6 +45,7 @@ export function AudiusLoginButton({ className = "", onSuccess }: AudiusLoginButt
               src={user.profilePicture}
               alt={user.name}
               className="h-7 w-7 rounded-full object-cover ring-1 ring-green-500/30"
+              onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-avatar.svg"; }}
             />
           ) : (
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-green-500/20">

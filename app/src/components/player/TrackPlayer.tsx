@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, AlertCircle } from "lucide-react";
 import { getTrackStreamUrl } from "@/services/audius";
 
 interface TrackPlayerProps {
@@ -34,61 +34,88 @@ export function TrackPlayer({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // true while metadata loads
+  const [error, setError] = useState<string | null>(null);
 
   const streamUrl = getTrackStreamUrl(trackId);
 
-  // Initialize audio element
+  // Initialize audio and load metadata immediately so duration is available
   useEffect(() => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsLoading(true);
+    setError(null);
+
     const audio = new Audio();
     audio.preload = "metadata";
     audio.volume = volume;
+    // Set src immediately — this triggers the browser to fetch metadata
+    // (including duration) without downloading the full stream.
+    audio.src = streamUrl;
     audioRef.current = audio;
 
+    const onLoadedMetadata = () => {
+      if (isFinite(audio.duration)) setDuration(audio.duration);
+      setIsLoading(false);
+    };
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onDurationChange = () => setDuration(audio.duration);
-    const onEnded = () => setIsPlaying(false);
+    const onDurationChange = () => {
+      if (isFinite(audio.duration) && audio.duration > 0) setDuration(audio.duration);
+    };
+    const onEnded = () => { setIsPlaying(false); setCurrentTime(0); };
     const onWaiting = () => setIsLoading(true);
     const onCanPlay = () => setIsLoading(false);
+    const onError = () => {
+      setIsLoading(false);
+      setIsPlaying(false);
+      setError("Stream unavailable — the track may be restricted or offline.");
+    };
 
+    audio.addEventListener("loadedmetadata", onLoadedMetadata);
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("durationchange", onDurationChange);
     audio.addEventListener("ended", onEnded);
     audio.addEventListener("waiting", onWaiting);
     audio.addEventListener("canplay", onCanPlay);
+    audio.addEventListener("error", onError);
 
     return () => {
       audio.pause();
+      audio.src = "";
+      audio.removeEventListener("loadedmetadata", onLoadedMetadata);
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("durationchange", onDurationChange);
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("waiting", onWaiting);
       audio.removeEventListener("canplay", onCanPlay);
-      audio.src = "";
+      audio.removeEventListener("error", onError);
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streamUrl]);
 
   const togglePlay = useCallback(async () => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || error) return;
 
     if (isPlaying) {
       audio.pause();
       setIsPlaying(false);
     } else {
-      if (!audio.src) {
-        audio.src = streamUrl;
-      }
       setIsLoading(true);
       try {
         await audio.play();
         setIsPlaying(true);
-      } catch (e) {
-        console.warn("Playback failed:", e);
+        setIsLoading(false);
+      } catch (e: any) {
+        setIsLoading(false);
+        // NotAllowedError = browser autoplay policy, anything else is a real error
+        if (e?.name !== "AbortError") {
+          setError("Playback failed. The stream may not be available in your region.");
+        }
       }
-      setIsLoading(false);
     }
-  }, [isPlaying, streamUrl]);
+  }, [isPlaying, error]);
 
   const seek = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -113,9 +140,7 @@ export function TrackPlayer({
   const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     setVolume(val);
-    if (audioRef.current) {
-      audioRef.current.volume = val;
-    }
+    if (audioRef.current) audioRef.current.volume = val;
     if (val > 0 && isMuted) {
       setIsMuted(false);
       if (audioRef.current) audioRef.current.muted = false;
@@ -130,12 +155,14 @@ export function TrackPlayer({
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  // ─── compact mode ────────────────────────────────────────────────────────────
   if (compact) {
     return (
       <div className="flex items-center gap-3">
         <button
           onClick={togglePlay}
-          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-primary text-white transition-transform hover:scale-105"
+          disabled={!!error}
+          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-primary text-white transition-transform hover:scale-105 disabled:opacity-40"
         >
           {isLoading ? (
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -162,42 +189,53 @@ export function TrackPlayer({
     );
   }
 
+  // ─── full mode ───────────────────────────────────────────────────────────────
   return (
     <div className="glass-card p-4">
       <div className="flex items-center gap-4">
         {/* Artwork */}
         <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl">
-          <img src={artwork} alt={title} className="h-full w-full object-cover" />
+          <img
+            src={artwork || "/placeholder-track.svg"}
+            alt={title}
+            className="h-full w-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-track.svg"; }}
+          />
           {isPlaying && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
               <div className="flex items-end gap-0.5 h-4">
-                <div className="w-0.5 animate-pulse bg-accent-cyan rounded-full" style={{ height: "60%", animationDelay: "0ms" }} />
-                <div className="w-0.5 animate-pulse bg-accent-cyan rounded-full" style={{ height: "100%", animationDelay: "150ms" }} />
-                <div className="w-0.5 animate-pulse bg-accent-cyan rounded-full" style={{ height: "40%", animationDelay: "300ms" }} />
-                <div className="w-0.5 animate-pulse bg-accent-cyan rounded-full" style={{ height: "80%", animationDelay: "450ms" }} />
+                {[0, 150, 300, 450].map((delay) => (
+                  <div
+                    key={delay}
+                    className="w-0.5 animate-pulse bg-accent-cyan rounded-full"
+                    style={{ height: delay % 300 === 0 ? "60%" : delay % 150 === 0 ? "100%" : "40%", animationDelay: `${delay}ms` }}
+                  />
+                ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* Info + controls */}
+        {/* Info */}
         <div className="flex-1 min-w-0">
           <p className="truncate text-sm font-semibold text-white">{title}</p>
           <p className="truncate text-xs text-slate-400">{artist}</p>
         </div>
 
-        {/* Playback controls */}
+        {/* Controls */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => skipBy(-10)}
-            className="text-slate-400 transition-colors hover:text-white"
+            disabled={!duration}
+            className="text-slate-400 transition-colors hover:text-white disabled:opacity-30"
           >
             <SkipBack className="h-4 w-4" />
           </button>
 
           <button
             onClick={togglePlay}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-white transition-transform hover:scale-105"
+            disabled={!!error}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-white transition-transform hover:scale-105 disabled:opacity-40"
           >
             {isLoading ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -210,7 +248,8 @@ export function TrackPlayer({
 
           <button
             onClick={() => skipBy(10)}
-            className="text-slate-400 transition-colors hover:text-white"
+            disabled={!duration}
+            className="text-slate-400 transition-colors hover:text-white disabled:opacity-30"
           >
             <SkipForward className="h-4 w-4" />
           </button>
@@ -218,10 +257,7 @@ export function TrackPlayer({
 
         {/* Volume */}
         <div className="hidden items-center gap-2 sm:flex">
-          <button
-            onClick={toggleMute}
-            className="text-slate-400 transition-colors hover:text-white"
-          >
+          <button onClick={toggleMute} className="text-slate-400 transition-colors hover:text-white">
             {isMuted || volume === 0 ? (
               <VolumeX className="h-4 w-4" />
             ) : (
@@ -251,9 +287,17 @@ export function TrackPlayer({
         </div>
         <div className="mt-1 flex justify-between text-[10px] text-slate-500">
           <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration)}</span>
+          <span>{isLoading && duration === 0 ? "—:——" : formatTime(duration)}</span>
         </div>
       </div>
+
+      {/* Error state */}
+      {error && (
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2">
+          <AlertCircle className="h-4 w-4 flex-shrink-0 text-red-400" />
+          <p className="text-xs text-red-400">{error}</p>
+        </div>
+      )}
     </div>
   );
 }

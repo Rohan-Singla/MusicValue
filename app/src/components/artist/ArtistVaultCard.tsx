@@ -50,6 +50,7 @@ export function ArtistVaultCard({ track }: ArtistVaultCardProps) {
             src={track.artwork?.["150x150"] || "/placeholder-track.svg"}
             alt={track.title}
             className="h-14 w-14 rounded-xl object-cover flex-shrink-0"
+            onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-track.svg"; }}
           />
           <div className="min-w-0 flex-1">
             <h3 className="truncate font-semibold text-white">{track.title}</h3>

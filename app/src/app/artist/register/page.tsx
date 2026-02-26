@@ -8,7 +8,7 @@ import { AudiusLoginButton } from "@/components/artist/AudiusLoginButton";
 import { getUserTracks } from "@/services/audius";
 import { useInitializeVault } from "@/hooks/useVault";
 import { AudiusTrack } from "@/services/audius";
-import { USDC_DECIMALS } from "@/lib/constants";
+import { USDC_DECIMALS, BACKEND_URL } from "@/lib/constants";
 import {
   ArrowRight,
   CheckCircle,
@@ -17,6 +17,9 @@ import {
   Loader2,
   ChevronLeft,
   ArrowLeft,
+  Zap,
+  Users,
+  TrendingUp,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -75,7 +78,7 @@ export default function ArtistRegisterPage() {
 
     setVerifying(true);
     try {
-      const res = await fetch("/api/audius/verify-track", {
+      const res = await fetch(`${BACKEND_URL}/api/audius/verify-track`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jwt: audiusUser.jwt, trackId: selectedTrack.id }),
@@ -93,7 +96,7 @@ export default function ArtistRegisterPage() {
   };
 
   const handleCreateVault = async () => {
-    if (!selectedTrack || !publicKey) return;
+    if (!selectedTrack || !publicKey || !audiusUser) return;
 
     const trackId = selectedTrack.id;
     if (trackId.length > 32) {
@@ -110,6 +113,35 @@ export default function ArtistRegisterPage() {
     try {
       const capLamports = Math.floor(cap * 10 ** USDC_DECIMALS);
       await initVault.mutateAsync(capLamports);
+
+      // Register artist + vault in DB (fire sequentially, non-blocking on failure)
+      try {
+        await fetch(`${BACKEND_URL}/api/db/artists`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            audius_user_id: audiusUser.userId,
+            audius_handle: audiusUser.handle,
+            audius_name: audiusUser.name,
+            solana_wallet: publicKey.toBase58(),
+            terms_accepted: true,
+          }),
+        });
+        await fetch(`${BACKEND_URL}/api/db/vaults`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            track_id: trackId,
+            track_title: selectedTrack.title,
+            audius_user_id: audiusUser.userId,
+            artist_wallet: publicKey.toBase58(),
+            cap: capLamports,
+          }),
+        });
+      } catch (dbErr) {
+        console.error("DB registration failed (vault still created on-chain):", dbErr);
+      }
+
       toast.success("Vault created successfully!");
       router.push("/artist");
     } catch (err: any) {
@@ -169,17 +201,38 @@ export default function ArtistRegisterPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary">
               <Music className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-2xl font-extrabold text-white">Artist Portal</h1>
+            <h1 className="text-2xl font-extrabold text-white">Launch a Music Vault</h1>
             <p className="mt-3 text-slate-400">
-              Create a music vault for your Audius tracks. Fans deposit USDC, earn
-              DeFi yield, and you build a committed community of backers.
+              Raise capital from fans who believe in your music. In return, you
+              distribute a share of your royalties back to them on-chain — building
+              a community that wins when you win.
             </p>
-            <div className="mt-6 space-y-3 text-left">
+
+            {/* How the royalty model works */}
+            <div className="mt-6 grid grid-cols-3 gap-3 text-left">
+              <div className="rounded-xl border border-base-200 bg-base-50 p-3">
+                <Users className="mb-2 h-5 w-5 text-accent-purple" />
+                <p className="text-xs font-semibold text-white">Fans Back You</p>
+                <p className="mt-0.5 text-[11px] text-slate-400">Fans deposit USDC and receive share tokens tied to your vault</p>
+              </div>
+              <div className="rounded-xl border border-base-200 bg-base-50 p-3">
+                <TrendingUp className="mb-2 h-5 w-5 text-accent-cyan" />
+                <p className="text-xs font-semibold text-white">You Earn Royalties</p>
+                <p className="mt-0.5 text-[11px] text-slate-400">Your music earns streaming revenue on Audius and other platforms</p>
+              </div>
+              <div className="rounded-xl border border-base-200 bg-base-50 p-3">
+                <Zap className="mb-2 h-5 w-5 text-accent-pink" />
+                <p className="text-xs font-semibold text-white">Distribute On-Chain</p>
+                <p className="mt-0.5 text-[11px] text-slate-400">You push royalty yield to the vault — share holders earn proportionally</p>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-2.5 text-left">
               {[
-                "Connect your Audius account to prove track ownership",
-                "Select which track to create a vault for",
-                "Set a funding cap and launch your vault on Solana",
-                "Fans back your music and earn yield while you grow",
+                "Connect your Audius account — we verify you own the track",
+                "Set a funding cap (max USDC fans can deposit)",
+                "After launch, distribute royalties anytime from your Artist Dashboard",
+                "Fans can withdraw their USDC + earned royalties at any time",
               ].map((item) => (
                 <div key={item} className="flex items-start gap-2.5">
                   <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent-purple" />
@@ -269,6 +322,7 @@ export default function ArtistRegisterPage() {
                       src={track.artwork?.["150x150"] || "/placeholder-track.svg"}
                       alt={track.title}
                       className="h-10 w-10 flex-shrink-0 rounded-lg object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-track.svg"; }}
                     />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-white">
@@ -328,12 +382,13 @@ export default function ArtistRegisterPage() {
               <p className="mb-3">By creating a vault on MusicValue, you agree to:</p>
               <ul className="list-inside list-disc space-y-2">
                 <li>You are the sole owner of the selected Audius track</li>
-                <li>You will make good-faith efforts to distribute yield to backers</li>
-                <li>Vault funds are held in a non-custodial Solana smart contract</li>
-                <li>Fans may withdraw their deposits at any time</li>
-                <li>MusicValue does not guarantee returns or specific yield rates</li>
+                <li>You will periodically distribute a portion of your music royalties to vault backers via the Artist Dashboard</li>
+                <li>Royalty distributions are artist-triggered — you decide the amount and timing</li>
+                <li>Vault funds are held in a non-custodial Solana smart contract; MusicValue cannot access them</li>
+                <li>Fans may withdraw their USDC deposit at any time</li>
+                <li>MusicValue does not guarantee specific royalty yields or distribution schedules</li>
                 <li>This is experimental software running on Solana devnet</li>
-                <li>You are responsible for tax and legal obligations in your jurisdiction</li>
+                <li>You are responsible for any tax and legal obligations in your jurisdiction</li>
               </ul>
             </div>
             <label className="mt-4 flex cursor-pointer items-start gap-3">
@@ -344,7 +399,7 @@ export default function ArtistRegisterPage() {
                 className="mt-0.5 h-4 w-4 accent-[#8b5cf6]"
               />
               <span className="text-sm text-slate-300">
-                I agree to the terms and conditions and confirm I own this track
+                I agree to the terms, confirm I own this track, and commit to distributing royalties to my backers
               </span>
             </label>
             <div className="mt-6 flex justify-between">
@@ -382,11 +437,28 @@ export default function ArtistRegisterPage() {
                   src={selectedTrack.artwork?.["150x150"] || "/placeholder-track.svg"}
                   alt={selectedTrack.title}
                   className="h-12 w-12 flex-shrink-0 rounded-xl object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-track.svg"; }}
                 />
                 <div>
                   <p className="font-semibold text-white">{selectedTrack.title}</p>
                   <p className="text-xs text-slate-400">
                     {selectedTrack.play_count.toLocaleString()} plays · ID: {selectedTrack.id}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Royalty distribution info */}
+            <div className="mt-5 rounded-xl border border-accent-cyan/20 bg-accent-cyan/5 p-4">
+              <div className="flex items-start gap-3">
+                <Zap className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent-cyan" />
+                <div>
+                  <p className="text-sm font-semibold text-white">How royalty distribution works</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Once your vault is live and fans have backed it, go to your{" "}
+                    <span className="text-accent-cyan">Artist Dashboard</span> to distribute royalties.
+                    You transfer USDC into the vault — every share holder earns proportionally.
+                    You control the amount and timing; fans can withdraw anytime.
                   </p>
                 </div>
               </div>

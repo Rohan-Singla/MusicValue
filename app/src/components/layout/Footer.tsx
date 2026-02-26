@@ -1,6 +1,7 @@
 "use client";
 
 import { Music } from "lucide-react";
+import Link from "next/link";
 
 export function Footer() {
   return (
@@ -9,14 +10,21 @@ export function Footer() {
         <div className="flex items-center gap-2 text-sm text-slate-500">
           <Music className="h-4 w-4" />
           <span>MusicValue</span>
-          <span className="text-slate-700">|</span>
+          <span className="text-slate-700">·</span>
           <span>Built on Solana</span>
         </div>
         <div className="flex items-center gap-4 text-sm text-slate-500">
           <span>Powered by</span>
           <span className="text-accent-purple">Audius</span>
           <span className="text-slate-700">+</span>
-          <span className="text-accent-cyan">Torque</span>
+          <span className="text-white">Solana</span>
+          <span className="text-slate-700">·</span>
+          <Link
+            href="/artist"
+            className="text-slate-400 transition-colors hover:text-accent-purple"
+          >
+            Artist Portal
+          </Link>
         </div>
       </div>
     </footer>

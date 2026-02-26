@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { Router, Request, Response } from "express";
 import {
   Connection,
   PublicKey,
@@ -19,10 +19,11 @@ import {
   PROGRAM_ID_STR,
   USDC_MINT_STR,
   USDC_DECIMALS,
-} from "@/lib/constants";
-import { ACTIONS_CORS_HEADERS } from "@/lib/actions";
+  ACTIONS_CORS_HEADERS,
+} from "../../lib/constants";
 
-// IDL discriminators from the compiled program
+const router = Router();
+
 const DEPOSIT_DISCRIMINATOR = Buffer.from([242, 35, 198, 137, 82, 225, 242, 182]);
 
 function programId() {
@@ -57,49 +58,45 @@ function getUserPositionPda(vaultPda: PublicKey, user: PublicKey) {
   );
 }
 
-export const OPTIONS = () => {
-  return NextResponse.json(null, { headers: ACTIONS_CORS_HEADERS });
-};
+// OPTIONS preflight
+router.options("/", (_, res) => {
+  res.set(ACTIONS_CORS_HEADERS).sendStatus(200);
+});
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const trackId = searchParams.get("trackId");
+// GET — action metadata
+router.get("/", async (req: Request, res: Response) => {
+  const trackId = req.query.trackId as string | undefined;
 
   if (!trackId) {
-    return NextResponse.json(
-      { error: "trackId is required" },
-      { status: 400, headers: ACTIONS_CORS_HEADERS }
-    );
+    return res
+      .status(400)
+      .set(ACTIONS_CORS_HEADERS)
+      .json({ error: "trackId is required" });
   }
 
-  // Fetch track info from Audius for metadata
   let title = "Back this track";
   let description = "Deposit USDC into the music vault and earn yield";
   let icon = `${APP_URL}/musicvalue-icon.png`;
 
   try {
-    const res = await fetch(`${AUDIUS_API_BASE}/tracks/${trackId}`, {
-      headers: {
-        Accept: "application/json",
-      },
+    const apiRes = await fetch(`${AUDIUS_API_BASE}/tracks/${trackId}`, {
+      headers: { Accept: "application/json" },
     });
-    if (res.ok) {
-      const data = await res.json();
+    if (apiRes.ok) {
+      const data = await apiRes.json() as { data?: any };
       const track = data.data;
       if (track) {
         title = `Back "${track.title}" by ${track.user?.name || "Unknown"}`;
         description = `Deposit USDC into the music vault for ${track.title}. Earn DeFi yield while supporting the artist. ${track.play_count?.toLocaleString() || 0} plays on Audius.`;
-        if (track.artwork?.["480x480"]) {
-          icon = track.artwork["480x480"];
-        }
+        if (track.artwork?.["480x480"]) icon = track.artwork["480x480"];
       }
     }
   } catch {
-    // Use defaults if Audius API fails
+    // use defaults
   }
 
   const payload = {
-    type: "action" as const,
+    type: "action",
     icon,
     title,
     description,
@@ -107,27 +104,27 @@ export async function GET(req: NextRequest) {
     links: {
       actions: [
         {
-          type: "transaction" as const,
+          type: "transaction",
           label: "Back with $10",
           href: `${APP_URL}/api/actions/back-track?trackId=${trackId}&amount=10`,
         },
         {
-          type: "transaction" as const,
+          type: "transaction",
           label: "Back with $25",
           href: `${APP_URL}/api/actions/back-track?trackId=${trackId}&amount=25`,
         },
         {
-          type: "transaction" as const,
+          type: "transaction",
           label: "Back with $50",
           href: `${APP_URL}/api/actions/back-track?trackId=${trackId}&amount=50`,
         },
         {
-          type: "transaction" as const,
+          type: "transaction",
           label: "Custom Amount",
           href: `${APP_URL}/api/actions/back-track?trackId=${trackId}&amount={amount}`,
           parameters: [
             {
-              type: "number" as const,
+              type: "number",
               name: "amount",
               label: "USDC Amount",
               required: true,
@@ -140,29 +137,27 @@ export async function GET(req: NextRequest) {
     },
   };
 
-  return NextResponse.json(payload, { headers: ACTIONS_CORS_HEADERS });
-}
+  return res.set(ACTIONS_CORS_HEADERS).json(payload);
+});
 
-export async function POST(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const trackId = searchParams.get("trackId");
-  const amountStr = searchParams.get("amount");
+// POST — build transaction
+router.post("/", async (req: Request, res: Response) => {
+  const trackId = req.query.trackId as string | undefined;
+  const amountStr = req.query.amount as string | undefined;
 
   if (!trackId || !amountStr) {
-    return NextResponse.json(
-      { error: "trackId and amount are required" },
-      { status: 400, headers: ACTIONS_CORS_HEADERS }
-    );
+    return res
+      .status(400)
+      .set(ACTIONS_CORS_HEADERS)
+      .json({ error: "trackId and amount are required" });
   }
 
-  const body = await req.json();
-  const account = body.account;
-
+  const account = req.body?.account as string | undefined;
   if (!account) {
-    return NextResponse.json(
-      { error: "account is required in request body" },
-      { status: 400, headers: ACTIONS_CORS_HEADERS }
-    );
+    return res
+      .status(400)
+      .set(ACTIONS_CORS_HEADERS)
+      .json({ error: "account is required in request body" });
   }
 
   try {
@@ -170,10 +165,10 @@ export async function POST(req: NextRequest) {
     const amount = parseFloat(amountStr);
 
     if (isNaN(amount) || amount <= 0) {
-      return NextResponse.json(
-        { error: "Invalid amount" },
-        { status: 400, headers: ACTIONS_CORS_HEADERS }
-      );
+      return res
+        .status(400)
+        .set(ACTIONS_CORS_HEADERS)
+        .json({ error: "Invalid amount" });
     }
 
     const connection = new Connection(SOLANA_RPC_URL, "confirmed");
@@ -188,14 +183,12 @@ export async function POST(req: NextRequest) {
 
     const lamports = Math.floor(amount * 10 ** USDC_DECIMALS);
 
-    // Build instruction data: 8-byte discriminator + 8-byte u64 amount (little-endian)
     const amountBuf = Buffer.alloc(8);
     amountBuf.writeBigUInt64LE(BigInt(lamports));
     const data = Buffer.concat([DEPOSIT_DISCRIMINATOR, amountBuf]);
 
     const instructions: TransactionInstruction[] = [];
 
-    // Create user share token account if it doesn't exist
     try {
       await getAccount(connection, userShares);
     } catch {
@@ -209,7 +202,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Build the deposit instruction matching the IDL account order
     instructions.push(
       new TransactionInstruction({
         programId: programId(),
@@ -241,17 +233,16 @@ export async function POST(req: NextRequest) {
       .serialize({ requireAllSignatures: false })
       .toString("base64");
 
-    return NextResponse.json(
-      {
-        transaction: serializedTx,
-        message: `Backing track with $${amount} USDC`,
-      },
-      { headers: ACTIONS_CORS_HEADERS }
-    );
+    return res.set(ACTIONS_CORS_HEADERS).json({
+      transaction: serializedTx,
+      message: `Backing track with $${amount} USDC`,
+    });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to create transaction" },
-      { status: 500, headers: ACTIONS_CORS_HEADERS }
-    );
+    return res
+      .status(500)
+      .set(ACTIONS_CORS_HEADERS)
+      .json({ error: err.message || "Failed to create transaction" });
   }
-}
+});
+
+export default router;

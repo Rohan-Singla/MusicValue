@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { WalletButton } from "@/components/wallet/WalletButton";
-import { PointsBadge } from "@/components/loyalty/PointsBadge";
 import { Music, Search, Mic2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -55,7 +54,6 @@ export function Navbar() {
             <Mic2 className="h-3.5 w-3.5" />
             Artist Portal
           </Link>
-          <PointsBadge />
           <WalletButton />
         </div>
       </div>

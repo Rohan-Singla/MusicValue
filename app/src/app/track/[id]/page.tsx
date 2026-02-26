@@ -73,6 +73,7 @@ export default function TrackPage() {
                 src={track.artwork?.["480x480"] || "/placeholder-track.svg"}
                 alt={track.title}
                 className="h-full w-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-track.svg"; }}
               />
               <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity hover:opacity-100">
                 <Play className="h-12 w-12 text-white" />
@@ -94,13 +95,12 @@ export default function TrackPage() {
                 target="_blank"
                 className="mt-1 flex items-center gap-2 text-slate-400 transition-colors hover:text-accent-cyan"
               >
-                {track.user.profile_picture && (
-                  <img
-                    src={track.user.profile_picture["150x150"]}
-                    alt={track.user.name}
-                    className="h-6 w-6 rounded-full"
-                  />
-                )}
+                <img
+                  src={track.user.profile_picture?.["150x150"] || "/placeholder-avatar.svg"}
+                  alt={track.user.name}
+                  className="h-6 w-6 rounded-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-avatar.svg"; }}
+                />
                 <span className="font-medium">{track.user.name}</span>
                 <ExternalLink className="h-3 w-3" />
               </Link>

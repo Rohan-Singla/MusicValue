@@ -16,7 +16,6 @@ import {
   Music,
 } from "lucide-react";
 import { useVault, useUserPosition, useDeposit, useWithdraw } from "@/hooks/useVault";
-import { useLoyalty } from "@/hooks/useLoyalty";
 import { useAudiusAuth } from "@/hooks/useAudiusAuth";
 import { copyBlinkToClipboard } from "@/services/blinks";
 import toast from "react-hot-toast";
@@ -70,7 +69,6 @@ export function VaultPanel({ trackId, trackTitle, artistUserId }: VaultPanelProp
   const { data: position } = useUserPosition(trackId);
   const deposit = useDeposit(trackId);
   const withdraw = useWithdraw(trackId);
-  const { addPoints } = useLoyalty();
   const { data: usdcBalance } = useUsdcBalance();
 
   const [depositAmount, setDepositAmount] = useState("");
@@ -99,7 +97,6 @@ export function VaultPanel({ trackId, trackTitle, artistUserId }: VaultPanelProp
     try {
       const lamports = Math.floor(amount * 10 ** USDC_DECIMALS);
       const txHash = await deposit.mutateAsync(lamports);
-      addPoints("back_track", trackId);
       setDepositAmount("");
       setLastTxHash(txHash);
       toast.success(`Backed ${trackTitle} with $${amount} USDC`);
@@ -129,7 +126,6 @@ export function VaultPanel({ trackId, trackTitle, artistUserId }: VaultPanelProp
   const handleShareBlink = async () => {
     const success = await copyBlinkToClipboard(trackId);
     if (success) {
-      addPoints("share_blink", trackId);
       toast.success("Blink link copied to clipboard!");
     } else {
       toast.error("Failed to copy link");

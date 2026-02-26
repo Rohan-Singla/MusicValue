@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1035"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="icon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#a855f7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="480" height="480" fill="url(#bg)"/>
+
+  <!-- Subtle glow -->
+  <circle cx="240" cy="240" r="200" fill="url(#glow)"/>
+
+  <!-- Vinyl record outer ring -->
+  <circle cx="240" cy="240" r="170" fill="none" stroke="url(#ring)" stroke-width="1.5" stroke-opacity="0.4"/>
+  <circle cx="240" cy="240" r="140" fill="none" stroke="url(#ring)" stroke-width="1" stroke-opacity="0.25"/>
+  <circle cx="240" cy="240" r="110" fill="none" stroke="url(#ring)" stroke-width="1" stroke-opacity="0.15"/>
+
+  <!-- Waveform bars (bottom area) -->
+  <g fill="url(#icon)" opacity="0.35">
+    <rect x="100" y="320" width="8" height="24" rx="4"/>
+    <rect x="116" y="308" width="8" height="36" rx="4"/>
+    <rect x="132" y="298" width="8" height="46" rx="4"/>
+    <rect x="148" y="314" width="8" height="30" rx="4"/>
+    <rect x="164" y="305" width="8" height="39" rx="4"/>
+    <rect x="180" y="295" width="8" height="49" rx="4"/>
+    <rect x="196" y="318" width="8" height="26" rx="4"/>
+    <rect x="212" y="302" width="8" height="42" rx="4"/>
+    <rect x="228" y="310" width="8" height="34" rx="4"/>
+    <rect x="244" y="300" width="8" height="44" rx="4"/>
+    <rect x="260" y="315" width="8" height="29" rx="4"/>
+    <rect x="276" y="306" width="8" height="38" rx="4"/>
+    <rect x="292" y="297" width="8" height="47" rx="4"/>
+    <rect x="308" y="312" width="8" height="32" rx="4"/>
+    <rect x="324" y="303" width="8" height="41" rx="4"/>
+    <rect x="340" y="319" width="8" height="25" rx="4"/>
+    <rect x="356" y="308" width="8" height="36" rx="4"/>
+    <rect x="372" y="322" width="8" height="22" rx="4"/>
+  </g>
+
+  <!-- Music note icon (center) -->
+  <g transform="translate(240,215)" fill="url(#icon)" opacity="0.9">
+    <!-- Note head -->
+    <ellipse cx="10" cy="0" rx="18" ry="13" transform="rotate(-20,10,0)"/>
+    <!-- Note stem -->
+    <rect x="24" y="-68" width="6" height="70" rx="3"/>
+    <!-- Note flag -->
+    <path d="M30 -68 Q70 -52 50 -30" stroke="url(#icon)" stroke-width="6" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Bottom gradient fade -->
+  <defs>
+    <linearGradient id="fade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="60%" stop-color="#0f0f1a" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#0f0f1a" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="480" fill="url(#fade)"/>
+</svg>

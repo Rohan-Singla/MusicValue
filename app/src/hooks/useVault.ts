@@ -11,7 +11,8 @@ import {
   getAccount,
 } from "@solana/spl-token";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
-import { PROGRAM_ID_STR, USDC_MINT_STR } from "@/lib/constants";
+import { PROGRAM_ID_STR, USDC_MINT_STR, BACKEND_URL } from "@/lib/constants";
+import { getTrack, AudiusTrack } from "@/services/audius";
 
 import idl from "@/lib/idl.json";
 
@@ -230,33 +231,132 @@ export function useDeposit(trackId: string) {
 
       return await builder.rpc();
     },
-    onSuccess: () => {
+    onSuccess: (txSignature, amountUsdc) => {
+      // Record deposit in DB (fire-and-forget — on-chain is source of truth)
+      fetch(`${BACKEND_URL}/api/db/deposits`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tx_signature: txSignature,
+          track_id: trackId,
+          backer_wallet: publicKey?.toBase58(),
+          amount_usdc: amountUsdc,
+        }),
+      }).catch((e) => console.error("Deposit DB record failed:", e));
+
       queryClient.invalidateQueries({ queryKey: ["vault", trackId] });
       queryClient.invalidateQueries({ queryKey: ["position", trackId] });
     },
   });
 }
 
-/**
- * Distribute yield to depositors (artist-only UI action).
- * The on-chain program does not yet have a distribute_yield instruction,
- * so this is a UI-only stub that simulates the flow.
- */
+/** Distribute yield into the vault (artist/authority only) */
 export function useDistributeYield(trackId: string) {
+  const program = useProgram();
   const { publicKey } = useWallet();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (amountUsdc: number) => {
-      if (!publicKey) throw new Error("Wallet not connected");
-      // Stub: in production this would call program.methods.distributeYield(...)
-      // For now it just simulates a delay and returns a fake tx
-      await new Promise((res) => setTimeout(res, 1500));
-      return "simulated_distribute_yield_" + Date.now().toString(36);
+      if (!program || !publicKey) throw new Error("Wallet not connected");
+
+      const mint = usdcMint();
+      const [vaultPda] = getVaultPda(trackId);
+      const [vaultTokenAccount] = getVaultTokenPda(vaultPda);
+      const authorityUsdc = await getAssociatedTokenAddress(mint, publicKey);
+
+      const tx = await (program.methods as any)
+        .distributeYield(new BN(amountUsdc))
+        .accounts({
+          authority: publicKey,
+          vault: vaultPda,
+          authorityUsdc,
+          vaultTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+
+      return tx;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vault", trackId] });
     },
+  });
+}
+
+/** Read-only program (no wallet needed — for fetching all vault accounts on the homepage) */
+function useReadonlyProgram() {
+  const { connection } = useConnection();
+  return useMemo(() => {
+    try {
+      const dummy = {
+        publicKey: new PublicKey("11111111111111111111111111111111"),
+        signTransaction: async (tx: any) => tx,
+        signAllTransactions: async (txs: any[]) => txs,
+      };
+      const provider = new AnchorProvider(connection, dummy as any, AnchorProvider.defaultOptions());
+      return new Program(idl as any, provider);
+    } catch {
+      return null;
+    }
+  }, [connection]);
+}
+
+export interface VaultInfo {
+  address: PublicKey;
+  audiusTrackId: string;
+  totalDeposited: number;
+  cap: number;
+  totalShares: number;
+  authority: PublicKey;
+}
+
+export interface VaultedTrack {
+  vault: VaultInfo;
+  track: AudiusTrack;
+}
+
+/** Fetch every TrackVault account on-chain (works without a connected wallet) */
+export function useAllVaults() {
+  const program = useReadonlyProgram();
+
+  return useQuery({
+    queryKey: ["all-vaults"],
+    queryFn: async (): Promise<VaultInfo[]> => {
+      if (!program) return [];
+      const accounts = await (program.account as any).trackVault.all();
+      return accounts.map((a: any) => ({
+        address: a.publicKey as PublicKey,
+        audiusTrackId: a.account.audiusTrackId as string,
+        totalDeposited: (a.account.totalDeposited as BN).toNumber(),
+        cap: (a.account.cap as BN).toNumber(),
+        totalShares: (a.account.totalShares as BN).toNumber(),
+        authority: a.account.authority as PublicKey,
+      }));
+    },
+    enabled: !!program,
+    staleTime: 30_000,
+  });
+}
+
+/** Fetch all vaults and hydrate each with Audius track metadata */
+export function useVaultedTracks() {
+  const { data: vaults } = useAllVaults();
+
+  return useQuery({
+    queryKey: ["vaulted-tracks", vaults?.map((v) => v.audiusTrackId).join(",")],
+    queryFn: async (): Promise<VaultedTrack[]> => {
+      if (!vaults || vaults.length === 0) return [];
+      const results = await Promise.allSettled(vaults.map((v) => getTrack(v.audiusTrackId)));
+      return vaults
+        .map((vault, i) => {
+          const r = results[i];
+          return r.status === "fulfilled" ? { vault, track: r.value } : null;
+        })
+        .filter(Boolean) as VaultedTrack[];
+    },
+    enabled: Array.isArray(vaults),
+    staleTime: 60_000,
   });
 }
 

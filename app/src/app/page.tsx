@@ -2,9 +2,10 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { useTrendingTracks, useSearchTracks } from "@/hooks/useAudius";
+import { useSearchTracks } from "@/hooks/useAudius";
 import { TrackGrid } from "@/components/track/TrackGrid";
-import { Music, TrendingUp, Zap, Shield, ArrowRight, Mic2 } from "lucide-react";
+import { RaisingSection } from "@/components/track/RaisingSection";
+import { Music, Zap, ArrowRight, Mic2 } from "lucide-react";
 import Link from "next/link";
 
 function HeroSection() {
@@ -25,30 +26,29 @@ function HeroSection() {
         </div>
 
         <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
-          Back the music you love.
+          Back artists you believe in.
           <br />
-          <span className="gradient-text">Earn while you listen.</span>
+          <span className="gradient-text">Earn when they win.</span>
         </h1>
 
         <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-400">
-          Deposit USDC into music vaults, receive share tokens, and earn DeFi
-          yield. Support artists from Audius while your funds work for you.
+          Artists raise capital from fans via on-chain vaults. Fans receive
+          share tokens and earn yield as artists distribute royalties back to
+          their backers — all on Solana.
         </p>
 
         <div className="mt-8 flex items-center justify-center gap-4">
-          <a href="#trending" className="btn-primary inline-flex items-center gap-2">
-            Explore Tracks
+          <a href="#raising" className="btn-primary inline-flex items-center gap-2">
+            See Live Vaults
             <ArrowRight className="h-4 w-4" />
           </a>
-          <a
-            href="https://audius.co"
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            href="/artist/register"
             className="btn-secondary inline-flex items-center gap-2"
           >
-            <Music className="h-4 w-4" />
-            Browse Audius
-          </a>
+            <Mic2 className="h-4 w-4" />
+            Launch Your Vault
+          </Link>
         </div>
 
       </div>
@@ -60,15 +60,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("search") || "";
 
-  const {
-    data: trending,
-    isLoading: trendingLoading,
-  } = useTrendingTracks(10);
-
-  const {
-    data: searchResults,
-    isLoading: searchLoading,
-  } = useSearchTracks(searchQuery);
+  const { data: searchResults, isLoading: searchLoading } = useSearchTracks(searchQuery);
 
   const isSearching = searchQuery.length > 2;
 
@@ -85,20 +77,20 @@ function HomeContent() {
           {[
             {
               step: "01",
-              title: "Find a Track",
-              desc: "Browse trending tracks from Audius or search for your favorites",
+              title: "Artist Creates Vault",
+              desc: "Artists verify their Audius identity and launch a vault for their track with a funding cap",
               color: "purple",
             },
             {
               step: "02",
-              title: "Back the Vault",
-              desc: "Deposit USDC and receive share tokens representing your stake",
+              title: "Fans Back the Track",
+              desc: "Fans deposit USDC and receive share tokens proportional to their contribution",
               color: "cyan",
             },
             {
               step: "03",
-              title: "Earn Yield",
-              desc: "Your funds generate DeFi yield while you support the music",
+              title: "Royalties Flow Back",
+              desc: "Artists distribute royalty yield on-chain — share holders earn proportionally and can withdraw anytime",
               color: "pink",
             },
           ].map((item) => (
@@ -117,44 +109,46 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* Artist CTA */}
-      <section className="py-10">
-        <div className="relative overflow-hidden rounded-2xl border border-accent-purple/20 bg-accent-purple/5 px-8 py-10 text-center">
-          <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-br from-accent-purple/10 via-transparent to-accent-cyan/5 pointer-events-none" />
-          <div className="relative">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-purple/20 mx-auto mb-4">
-              <Mic2 className="h-6 w-6 text-accent-purple" />
-            </div>
-            <h2 className="text-xl font-bold text-white">Are You an Artist?</h2>
-            <p className="mt-2 text-sm text-slate-400 max-w-md mx-auto">
-              Verify your Audius identity, create a vault for your track, and let fans back your music
-              while earning DeFi yield. You commit to distributing royalty yield back to your backers.
-            </p>
-            <Link href="/artist" className="btn-primary inline-flex items-center gap-2 mt-5">
-              <Music className="h-4 w-4" />
-              Open Artist Portal
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Tracks */}
-      <section id="trending" className="pb-16 pt-4">
-        {isSearching ? (
+      {/* Search results — shown above Raising section when searching */}
+      {isSearching && (
+        <section className="pb-8">
           <TrackGrid
             tracks={searchResults || []}
             title={`Results for "${searchQuery}"`}
             isLoading={searchLoading}
           />
-        ) : (
-          <TrackGrid
-            tracks={trending || []}
-            title="Trending on Audius"
-            subtitle="Discover popular tracks and back your favorites"
-            isLoading={trendingLoading}
-          />
-        )}
+        </section>
+      )}
+
+      {/* Live MusicValue marketplace */}
+      <RaisingSection />
+
+      {/* Artist CTA */}
+      <section className="pb-16">
+        <div className="relative overflow-hidden rounded-2xl border border-accent-purple/20 bg-accent-purple/5 px-8 py-10 text-center">
+          <div className="absolute inset-0 bg-gradient-to-br from-accent-purple/10 via-transparent to-accent-cyan/5 pointer-events-none" />
+          <div className="relative">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-purple/20 mx-auto mb-4">
+              <Mic2 className="h-6 w-6 text-accent-purple" />
+            </div>
+            <h2 className="text-xl font-bold text-white">Launch Your Music Vault</h2>
+            <p className="mt-2 text-sm text-slate-400 max-w-md mx-auto">
+              Prove track ownership via Audius OAuth, set a funding cap, and let fans invest in your music.
+              Distribute royalty yield on-chain to build a loyal community of backers.
+            </p>
+            <div className="mt-5 flex items-center justify-center gap-3">
+              <Link href="/artist/register" className="btn-primary inline-flex items-center gap-2">
+                <Mic2 className="h-4 w-4" />
+                Create a Vault
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link href="/artist" className="btn-secondary inline-flex items-center gap-2">
+                <Music className="h-4 w-4" />
+                Artist Dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   );
