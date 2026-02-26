@@ -33,7 +33,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`dark`}>
-      <body className={`min-h-screen bg-base text-slate-200 antialiased ${poppins.className}`}>
+      <body suppressHydrationWarning className={`min-h-screen bg-base text-slate-200 antialiased ${poppins.className}`}>
         <SolanaProvider>
           <div className="flex min-h-screen flex-col">
             <Navbar />

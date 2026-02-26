@@ -36,7 +36,7 @@ export const SolanaProvider: FC<Props> = ({ children }) => {
     []
   );
 
-  if (!mounted) return <>{children}</>;
+  if (!mounted) return null;
 
   return (
     <ConnectionProvider endpoint={SOLANA_RPC_URL} config={{ wsEndpoint: SOLANA_WS_URL }}>
