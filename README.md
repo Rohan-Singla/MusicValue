@@ -58,13 +58,13 @@ The artist's risk to backers is not theft — it's simply not distributing. If t
 ## Sponsors & Technology
 
 ### Solana Blinks & Actions
-MusicValue uses **Solana Actions** to generate shareable Blink links for every track vault. A Blink turns any track's vault page into a one-click deposit experience that can be shared on Twitter/X, Discord, or any website — no wallet setup required for the viewer. This makes it trivially easy for an artist to tweet their vault link and let fans back them directly from their feed.
+MusicValue uses **Solana Actions** to generate shareable Blink links for every track vault. A Blink turns any track's vault page into a one-click deposit experience that can be shared on X, Discord, or any website — no wallet setup required for the viewer. This makes it trivially easy for an artist to tweet their vault link and let fans back them directly from their feed.
 
 ### Audius
 Artist identity and track ownership are verified through **Audius OAuth**. Artists log in with their Audius account and can only create vaults for tracks they actually own — verified server-side against the Audius API. Track metadata, artwork, play counts, and streaming stats are all pulled live from Audius, making MusicValue a native extension of the Audius ecosystem. Royalties earned on Audius are the primary yield source artists are expected to distribute.
 
 ### OrbitFlare RPC
-MusicValue's backend uses **OrbitFlare** as its Solana RPC provider. All blockchain reads and writes are routed through OrbitFlare's infrastructure — keeping the RPC endpoint and API key server-side only, never exposed to the browser. This gives the app fast, reliable Solana access without leaking credentials to the frontend.
+MusicValue's backend uses **OrbitFlare** as its Solana RPC provider. All blockchain reads and writes are routed through OrbitFlare's infrastructure . This gives the app fast, reliable Solana access without leaking credentials to the frontend.
 
 ---
 
