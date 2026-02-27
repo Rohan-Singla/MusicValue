@@ -1,4 +1,4 @@
-import { APP_URL } from "@/lib/constants";
+import { BACKEND_URL } from "@/lib/constants";
 
 /**
  * Blinks Service
@@ -11,7 +11,7 @@ import { APP_URL } from "@/lib/constants";
 
 /** Generate the Action API URL for a track */
 export function getActionUrl(trackId: string): string {
-  return `${APP_URL}/api/actions/back-track?trackId=${encodeURIComponent(trackId)}`;
+  return `${BACKEND_URL}/api/actions/back-track?trackId=${encodeURIComponent(trackId)}`;
 }
 
 /** Generate a shareable Blink URL using dial.to */
