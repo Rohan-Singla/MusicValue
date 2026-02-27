@@ -2,8 +2,9 @@
 export const PROGRAM_ID_STR = "Atf26b8XuQ49cmvfTsvU5PjZ56zhoCvFiGQ7bBW2zoio";
 
 // Backend URL — all sensitive RPC/API calls go through here
-export const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+export const BACKEND_URL = (
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001"
+).replace(/\/$/, "");
 
 // Solana RPC proxied through the backend (keeps the real RPC URL + API key server-side only)
 export const SOLANA_RPC_URL = `${BACKEND_URL}/rpc`;
